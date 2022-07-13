@@ -53,21 +53,12 @@
                 <p>{% trans "Link"%} 
                     <span>
                     <input type="text" value="{% if request.is_secure %}https{% else %}http{% endif %}://{{ request.META.HTTP_HOST }}{% url 'meetings:join' element.meetingID %}" />
-                    <button type="button" class="btn btn-secondary btn-join-meeting">{% trans "Copy"%}</button>
+                    <button type="button" class="bi bi-files btn btn-join-meeting"></button>
                     </span>
                     <a class="btn btn-info" href="{% url 'meetings:join' element.meetingID %}">{% trans "Join"%}</a>
                 </p>
-                
-                {% if element.info.end_time == "null" %}
-                    {% if element.running == 'true'  %}
-                        <span class="status running">{% trans "Running"%}</span>
-                    {% else %}
-                        <span class="status notrunning">{% trans "Not Running"%}</span>
-                    {% endif %}
-                {% else %}
-                    <span class="status notrunning">{% trans "Ended"%}</span>
-                {% endif %}
                 </td>
+                <td>{% if element.is_running == 'true' %}<span class="btn btn-outline-success">{% trans "Running" %}</span>{% else %}<span class="btn btn-outline-danger">{% trans "Not running" %}</span>{% endif %}</td>
             </tr>
             {% endfor %}
         </tbody>

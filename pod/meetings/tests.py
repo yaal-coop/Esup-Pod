@@ -1,3 +1,4 @@
+from unicodedata import name
 from django.test import TestCase
 from pod.meetings.utils import xml_to_json
 
@@ -16,32 +17,31 @@ class MeetingsTests(TestCase):
 
         self.assertTrue(type(meeting) == list)
 
-    '''
     def test_create_meeting(self):
-        name = 'test'
-        meetingID = 'test'
+        meetingID = Meetings()
+        m = Meetings.create(meetingID)
+        self.assertTrue(type(m) == Meetings)
 
-        # First step is to request BBB and create a meeting
-        m_xml = Meetings.objects.create(
-            name="pod",
-            meetingID="0007 - pod",
-        )
-        meeting_json = xml_to_json(m_xml)
-        self.assertTrue(meeting_json['returncode'] == 'SUCCESS')
-        self.assertTrue(meeting_json['meetingID'] == meetingID)
+    def test_end_meeting(self):
+        meetingID = '0026-pod'
+        meeting = Meetings.create(meetingID)
 
-        # Now create a model for it.
-        current_meetings = Meetings.objects.count()
-        meeting, _ = Meetings.objects.get_or_create(meetingID=meeting_json['meetingID'])
-        meeting.meetingID = meeting_json['meetingID']
-        meeting.name = name
-        meeting.welcome_text = meeting_json['meetingID']
-        meeting.attendee_password = meeting_json['attendeePW']
-        meeting.moderator_password = meeting_json['moderatorPW']
-        meeting.internal_meeting_id = meeting_json['internalMeetingID']
-        meeting.parent_meeting_id = meeting_json['parentMeetingID']
-        meeting.voice_bridge = meeting_json['voiceBridge']
-        meeting.save()
+        status = Meetings().end_meeting(meeting.meetingID)
+        print(status)
 
-        self.assertFalse(Meetings.objects.count() == current_meetings)
-    '''
+    def test_join_existing_meeting(self):
+        meetingID = '0026-pod'
+        b = Meetings().join_url(meetingID, 'Antoine Leva')
+        print(b)
+
+    def test_create_and_join_meeting(self):
+        name = 'Info'
+        meetingID = '0038-info'
+        meeting = Meetings.create(name, meetingID)
+
+        b = Meetings().join_url(meeting.meetingID, 'Moderator', meeting.moderatorPW)
+        print(b)
+        # It will print a link. join with it and see if it's ok or not!
+
+        b = Meetings().join_url(meeting.meetingID, 'Attendee', meeting.attendeePW)
+        print(b)

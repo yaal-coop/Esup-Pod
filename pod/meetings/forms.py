@@ -1,11 +1,16 @@
 from dataclasses import fields
+import datetime
 from django.forms import ModelForm, ValidationError
 from django import forms
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.db.models.query import QuerySet
+from django.contrib.admin import widgets
 
 from pod.meetings.models import Meetings, User
+
+class DateTimeInput(forms.DateTimeInput):
+    input_type = 'datetime-local'
 
 class MeetingsForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -29,35 +34,12 @@ class MeetingsForm(forms.ModelForm):
 
     class Meta:
         model = Meetings
-        fields = ['name', 'attendeePW', 'start_date', 'end_date', 'max_participants', 'auto_start_recording', 'allow_start_stop_recording', 'lock_settings_disable_cam', 'lock_settings_disable_mic', 'lock_settings_disable_private_chat', 'lock_settings_disable_public_chat', 'lock_settings_disable_note', 'lock_settings_locked_layout', 'ask_password']
+        fields = ['name', 'attendeePW', 'moderatorPW', 'start_date', 'end_date', 'max_participants', 'auto_start_recording', 'allow_start_stop_recording', 'lock_settings_disable_cam', 'lock_settings_disable_mic', 'lock_settings_disable_private_chat', 'lock_settings_disable_public_chat', 'lock_settings_disable_note', 'lock_settings_locked_layout', 'ask_password']
+        widgets = {
+            'start_date':DateTimeInput(),
+            'end_date':DateTimeInput(),
+        }
 
-class MeetingsNameForm(forms.Form):
-    name = forms.CharField(label="Your name")
+class MeetingsJoinForm(forms.Form):
+    fullName = forms.CharField(label="Your name")
     password = forms.CharField(label= ("Password"), widget=forms.PasswordInput())
-
-    def __init__(self, *args, **kwargs):
-        self.is_staff = (
-            kwargs.pop("is_staff") if "is_staff" in kwargs.keys() else self.is_staff
-        )
-        self.is_superuser = (
-            kwargs.pop("is_superuser")
-            if ("is_superuser" in kwargs.keys())
-            else self.is_superuser
-        )
-
-        super(MeetingsNameForm, self).__init__(*args, **kwargs)
-
-        instance = getattr(self, 'instance', None)
-        if instance and instance.additional_owners:
-            self.fields['name'].required = False
-            self.fields['name'].widget.attrs['disabled'] = 'disabled'
-
-        if instance and instance.owner:
-            self.fields['name'].required = False
-            self.fields['password'].required = False
-            self.fields['name'].widget.attrs['disabled'] = 'disabled'
-            self.fields['password'].widget.attrs['disabled'] = 'disabled'
-
-    def remove_field(self, field):
-        if self.fields.get(field):
-            del self.fields[field]

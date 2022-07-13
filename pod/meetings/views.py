@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.contrib import messages
 from platformdirs import user_data_path
 from django.utils.translation import ugettext_lazy as _
-from pod.meetings.forms import MeetingsForm, MeetingsNameForm
+from pod.meetings.forms import MeetingsForm, MeetingsJoinForm
 from pod.meetings.models import Meetings, User
 
 from django.views.decorators.csrf import csrf_protect
@@ -33,10 +33,6 @@ def meeting(request):
 @csrf_protect
 @login_required(redirect_field_name="referrer")
 def create_meeting(request):
-
-  if RESTRICT_EDIT_MEETING_ACCESS_TO_STAFF_ONLY and request.user.is_staff is False:
-    return render(request, "meeting_edit.html", {"access_not_allowed": True})
-
   form = MeetingsForm(
     is_staff=request.user.is_staff,
     is_superuser=request.user.is_superuser,
@@ -61,7 +57,7 @@ def create_meeting(request):
 
       meeting.save()
       form.save_m2m()
-      meeting.sites.add(get_current_site(request))
+      meeting.site = get_current_site(request)
       meeting.save()
       form.save_m2m()
       msg = 'Successfully created meeting'
@@ -73,15 +69,14 @@ def create_meeting(request):
         messages.ERROR,
         ("One or more errors have been found in the form."),
       )
-  context={"form": form}
+  context={"form": form, 'meetings':Meetings.objects.all()}
 
   return render(request, "meeting_add.html", context)
 
 @csrf_protect
 @login_required(redirect_field_name="referrer")
 def delete_meeting(request, meetingID):
-    # utiliser le get object or 404 sites=get_current_site(request)
-    meeting = get_object_or_404(Meetings, meetingID=meetingID, sites=get_current_site(request))
+    meeting = get_object_or_404(Meetings, meetingID=meetingID, site=get_current_site(request))
 
     if request.user != meeting.owner and not (
         request.user.is_superuser or request.user.has_perm("meeting.delete_meeting")
@@ -89,8 +84,11 @@ def delete_meeting(request, meetingID):
         messages.add_message(request, messages.ERROR, ("You cannot delete this meeting."))
         raise PermissionDenied
 
-    if request.method == "POST": # verifier que le user connecté est bien le prop de la reunion !
+    if request.method == "POST": 
       meeting.delete()
+      messages.add_message(
+        request, messages.INFO, ("The meeting has been deleted.")
+      )
       return redirect(reverse("meetings:meeting"))
 
     context={'item':meeting}
@@ -99,33 +97,92 @@ def delete_meeting(request, meetingID):
 
 
 def join_meeting(request, meetingID, slug_private=None):
-
     try:
         id = int(meetingID[: meetingID.find("-")])
     except ValueError:
         raise SuspiciousOperation("Invalid meeting id")
-    meeting = get_object_or_404(Meetings, id=id, sites=get_current_site(request))
+    meeting = get_object_or_404(Meetings, id=id, site=get_current_site(request))
 
     if request.user.is_authenticated and (request.user == meeting.owner or request.user in meeting.additional_owners):
-      name = request.user.get_full_name()
-      # verifier si elle est créée, sinon la créer
-      url = Meetings.join_url(meetingID, name, password=meeting.attendeePW)
+      name = request.user.get_full_name() if request.user.get_full_name() != "" else request.user.username
+      password = meeting.moderatorPW
+      if not meeting.meeting_info(meetingID, password):
+        meeting.create()
+      
+      url = meeting.join_url(name, password)
       print("is moderator : %s" % url)
-      # puis faire un redirect.
-    
-    # si la conf est créée et lacnée (is_running à True) il faut vérifier son mode d'accès et permettre à l'utilisateur de la rejoindre
+      return redirect(url)
+
+    if request.user.is_authenticated and not (request.user == meeting.owner or request.user in meeting.additional_owners) :
+      if not meeting.create():
+        return redirect("meetings:meeting_waiting_room")
+
+      url = meeting.join_url(name, password)
+      return redirect(url)
+
+    if not request.user.is_authenticated:
+      is_password_protected = meeting.attendeePW is not None and meeting.attendeePW != ""
+
+      show_page = get_meeting_access(request, meeting, slug_private)
+
+      if (
+          (show_page and not is_password_protected)
+          or (
+              show_page
+              and is_password_protected
+              and request.POST.get("password")
+              and request.POST.get("password") == meeting.attendeePW
+          )
+          or (slug_private and slug_private == meeting.get_hashkey())
+          or request.user == meeting.owner
+          or request.user.is_superuser
+          or request.user.has_perm("meeting.change_meeting")
+          or (request.user in meeting.additional_owners.all())
+      ):
+          name = request.POST.get("fullName")
+          password = meeting.attendeePW
+          url = meeting.join_url(name, password)
+          print("is moderator : %s" % url)
+          return redirect(url)
+      else:
+          is_restricted = meeting.is_restricted
+          is_restricted_to_group = meeting.restrict_access_to_groups.all().exists()
+          is_access_protected = is_restricted or is_restricted_to_group
+          if is_password_protected and (
+              not is_access_protected or (is_access_protected and show_page)
+          ):
+              form = (
+                  MeetingsJoinForm(request.POST) if request.POST else MeetingsJoinForm()
+              )
+              if (
+                  request.POST.get("password")
+                  and request.POST.get("password") != meeting.attendeePW
+              ):
+                  messages.add_message(
+                      request, messages.ERROR, _("The password is incorrect.")
+                  )
+              return render(
+                  request,
+                  "meeting_join.html",
+                  {
+                      "meeting": meeting,
+                      "form": form
+                  }
+              )
+
+    # si la conf est créée et lancée (is_running à True) il faut vérifier son mode d'accès et permettre à l'utilisateur de la rejoindre
 
     if request.method == "POST":
-        form = MeetingsNameForm(request.POST, is_staff=request.user.is_staff, is_superuser=request.user.is_superuser)
+        form = MeetingsJoinForm()
         if form.is_valid():
           data = form.cleaned_data
           meetingID = data.get('meetingID')
           name = data.get('name')
           password = data.get('password')
 
-          return HttpResponseRedirect(Meetings.join_url(meetingID, name, password))
+          return HttpResponseRedirect(meeting.join_url(name, password))
     else:
-        form = MeetingsNameForm(is_staff=request.user.is_staff, is_superuser=request.user.is_superuser)
+        form = MeetingsJoinForm()
 
     context={'meeting':meeting,
             'form':form}
@@ -141,27 +198,14 @@ def is_in_meeting_groups(user, meeting):
 
 def get_meeting_access(request, meeting, slug_private):
   """Return True if access is granted to current user."""
-  is_draft = meeting.is_draft
   is_restricted = meeting.is_restricted
   is_restricted_to_group = meeting.restrict_access_to_groups.all().exists()
-  """
-  is_password_protected = (video.password is not None
-                          and video.password != '')
-  """
   is_access_protected = (
-    is_draft
-    or is_restricted
+    is_restricted
     or is_restricted_to_group
-    # or is_password_protected
   )
   if is_access_protected:
     access_granted_for_private = slug_private and slug_private == meeting.get_hashkey()
-    access_granted_for_draft = request.user.is_authenticated and (
-      request.user == meeting.owner
-      or request.user.is_superuser
-      or request.user.has_perm("meeting.change_meeting")
-      or (request.user in meeting.additional_owners.all())
-    )
     access_granted_for_restricted = (
       request.user.is_authenticated and not is_restricted_to_group
     )
@@ -175,88 +219,15 @@ def get_meeting_access(request, meeting, slug_private):
 
     return (
       access_granted_for_private
-      or (is_draft and access_granted_for_draft)
       or (is_restricted and access_granted_for_restricted)
-      # and is_password_protected is False)
       or (is_restricted_to_group and access_granted_for_group)
-      # and is_password_protected is False)
-      # or (
-      #     is_password_protected
-      #     and access_granted_for_draft
-      # )
-      # or (
-      #     is_password_protected
-      #     and request.POST.get('password')
-      #     and request.POST.get('password') == video.password
-      # )
     )
 
   else:
     return True
 
-def render_meeting(request, meetingID, template_meeting="meeting_join.html", slug_private=None):
-  meeting = get_object_or_404(Meetings, meetingID=meetingID, sites=get_current_site(request))
-
-  is_password_protected = meeting.attendee_password is not None and meeting.attendee_password != ""
-
-  show_page = get_meeting_access(request, meeting, slug_private)
-
-  if (
-    (show_page and not is_password_protected)
-    or (
-      show_page
-      and is_password_protected
-      and request.POST.get("password")
-      and request.POST.get("password") == meeting.attendee_password
-    )
-    or (slug_private and slug_private == meeting.get_hashkey())
-    or request.user == meeting.owner
-    or request.user.is_superuser
-    or request.user.has_perm("meeting.change_meeting")
-    or (request.user in meeting.additional_owners.all())
-  ):
-    return render(
-      request,
-      template_meeting,
-      {
-        "meeting": meeting,
-      },
-    )
-  else:
-    is_draft = meeting.is_draft
-    is_restricted = meeting.is_restricted
-    is_restricted_to_group = meeting.restrict_access_to_groups.all().exists()
-    is_access_protected = is_draft or is_restricted or is_restricted_to_group
-    if is_password_protected and (
-      not is_access_protected or (is_access_protected and show_page)
-    ):
-      form = (
-        MeetingsNameForm(request.POST) if request.POST else MeetingsNameForm()
-      )
-      if (
-        request.POST.get("password")
-        and request.POST.get("password") != meeting.attendee_password
-      ):
-        messages.add_message(
-          request, messages.ERROR, _("The password is incorrect.")
-        )
-      return render(
-        request,
-        "meeting.html",
-        {
-          "meeting": meeting,
-          "form": form,
-        },
-      )
-    else:
-      iframe_param = "is_iframe=true&" if (request.GET.get("is_iframe")) else ""
-      return redirect(
-        "%s?%sreferrer=%s"
-        % (settings.LOGIN_URL, iframe_param, request.get_full_path())
-      )
-
 def edit_meeting(request, meetingID):
-  meeting = get_object_or_404(Meetings, meetingID=meetingID, sites=get_current_site(request))
+  meeting = get_object_or_404(Meetings, meetingID=meetingID, site=get_current_site(request))
 
   if RESTRICT_EDIT_MEETING_ACCESS_TO_STAFF_ONLY and request.user.is_staff is False:
     return render(request, "meeting_edit.html", {"access_not_allowed": True})
@@ -301,7 +272,7 @@ def edit_meeting(request, meetingID):
         
       meeting.save()
       form.save_m2m()
-      meeting.sites.add(get_current_site(request))
+      meeting.site = get_current_site(request)
       meeting.save()
       form.save_m2m()
 
@@ -316,6 +287,6 @@ def edit_meeting(request, meetingID):
         ("One or more errors have been found in the form."),
       )
 
-  context={"form": form}
+  context={"form": form, 'meetings':Meetings.objects.all()}
 
   return render(request, "meeting_edit.html", context)

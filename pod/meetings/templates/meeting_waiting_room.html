@@ -19,21 +19,6 @@
 
 {% block page_content %}
 
-<br>
-<div class="row">
-    <div class="col-md-6">
-        <div class="card card-body">
-
-            <p>{% trans "Are you sure you want to delete" %} "{{meeting}}" ?</p>
-
-            <form method="POST" action="">
-
-                {% csrf_token %}
-                <a class="btn btn-warning" href="{% url 'meetings:meeting' %}">{% trans "Cancel" %}</a>
-                <input class="btn btn-danger" type="submit" value="Yes">
-            </form>
-        </div>
-    </div>
-</div>
+<p>{% trans "The meeting will start when a moderator has opened the meeting. Please wait" %}</p>
 
 {% endblock page_content %}
