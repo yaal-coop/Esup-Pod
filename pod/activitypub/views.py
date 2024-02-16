@@ -1,6 +1,14 @@
 from django.conf import settings
 from django.http import JsonResponse
 from django.urls import reverse
+from pod.activitypub.models import Followers
+
+
+ACTIVITYPUB_CONTEXT = [
+    "https://www.w3.org/ns/activitystreams",
+    "https://w3id.org/security/v1",
+    {"RsaSignature2017": "https://w3id.org/security#RsaSignature2017"},
+]
 
 
 def webfinger(request):
@@ -29,11 +37,7 @@ def instance_account(request):
         reverse("activitypub:instance_account")
     )
     instance_data = {
-        "@context": [
-            "https://www.w3.org/ns/activitystreams",
-            "https://w3id.org/security/v1",
-            {"RsaSignature2017": "https://w3id.org/security#RsaSignature2017"},
-        ],
+        "@context": ACTIVITYPUB_CONTEXT,
         "type": "Application",
         "id": instance_actor_url,
         "following": request.build_absolute_uri(reverse("activitypub:following")),
@@ -56,19 +60,33 @@ def inbox(request):
     # receive follow request by post
     # post an accept response to wannabe follower
     # receive followed instance new videos/updates activity by post
-    pass
+    actor = request.POST["actor"]
+    object = request.POST["object"]
+    # TODO: reject invalid objects
+    # TODO: test double follows
+    # TODO: test HTTP signature
+    follower, _ = Followers.objects.get_or_create(actor=actor)
+    followers_url = request.build_absolute_uri(reverse("activitypub:followers"))
+    response = {
+        "@context": ACTIVITYPUB_CONTEXT,
+        "id": f"{followers_url}/{follower.id}",
+        "type": "Accept",
+        "actor": actor,
+        "object": object,
+    }
+    return JsonResponse(response, status=200)
 
 
 def outbox(request):
     # list all current instance videos
-    pass
+    return JsonResponse({}, status=200)
 
 
 def following(request):
     # list all followed instances
-    pass
+    return JsonResponse({}, status=200)
 
 
 def followers(request):
     # list all current instance followers
-    pass
+    return JsonResponse({}, status=200)
