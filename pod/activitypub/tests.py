@@ -1,7 +1,7 @@
 from django.test import TestCase
 from unittest import mock
 from pod.activitypub.models import Following
-from pod.activitypub.models import Followers
+from pod.activitypub.models import Follower
 
 
 class ActivityPubViewTest(TestCase):
@@ -47,7 +47,6 @@ class ActivityPubViewTest(TestCase):
             "followers": "http://testserver/account/peertube/followers",
             "inbox": "http://testserver/account/peertube/inbox",
             "outbox": "http://testserver/account/peertube/outbox",
-            "preferredUsername": "peertube",
             "url": "http://testserver/account/peertube",
             "name": "peertube",
             "publicKey": {
@@ -59,7 +58,7 @@ class ActivityPubViewTest(TestCase):
         self.assertJSONEqual(response.content, expected)
 
     def test_accept_follows(self):
-        self.assertEqual(Followers.objects.all().count(), 0)
+        self.assertEqual(Follower.objects.all().count(), 0)
 
         payload = {
             "@context": [
@@ -93,5 +92,5 @@ class ActivityPubViewTest(TestCase):
         }
         self.assertJSONEqual(response.content, expected)
 
-        follower = Followers.objects.get()
+        follower = Follower.objects.get()
         assert follower.actor == "http://localhost:9000/accounts/peertube"

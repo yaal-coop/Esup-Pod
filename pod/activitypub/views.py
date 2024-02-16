@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.http import JsonResponse
 from django.urls import reverse
-from pod.activitypub.models import Followers
+from pod.activitypub.models import Follower
 
 
 ACTIVITYPUB_CONTEXT = [
@@ -44,7 +44,6 @@ def instance_account(request):
         "followers": request.build_absolute_uri(reverse("activitypub:followers")),
         "inbox": request.build_absolute_uri(reverse("activitypub:inbox")),
         "outbox": request.build_absolute_uri(reverse("activitypub:outbox")),
-        "preferredUsername": instance_name,
         "url": instance_actor_url,
         "name": instance_name,
         "publicKey": {
@@ -65,7 +64,7 @@ def inbox(request):
     # TODO: reject invalid objects
     # TODO: test double follows
     # TODO: test HTTP signature
-    follower, _ = Followers.objects.get_or_create(actor=actor)
+    follower, _ = Follower.objects.get_or_create(actor=actor)
     followers_url = request.build_absolute_uri(reverse("activitypub:followers"))
     response = {
         "@context": ACTIVITYPUB_CONTEXT,
