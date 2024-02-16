@@ -1,7 +1,9 @@
-from django.test import TestCase
 from unittest import mock
-from pod.activitypub.models import Following
+
+from django.test import TestCase
+
 from pod.activitypub.models import Follower
+from pod.activitypub.models import Following
 
 
 class ActivityPubViewTest(TestCase):
@@ -25,7 +27,7 @@ class ActivityPubViewTest(TestCase):
                 {
                     "rel": "self",
                     "type": "application/activity+json",
-                    "href": "http://testserver/account/peertube",
+                    "href": "http://localhost:9090/account/peertube",
                 },
             ],
         }
@@ -42,16 +44,16 @@ class ActivityPubViewTest(TestCase):
                 {"RsaSignature2017": "https://w3id.org/security#RsaSignature2017"},
             ],
             "type": "Application",
-            "id": "http://testserver/account/peertube",
-            "following": "http://testserver/account/peertube/following",
-            "followers": "http://testserver/account/peertube/followers",
-            "inbox": "http://testserver/account/peertube/inbox",
-            "outbox": "http://testserver/account/peertube/outbox",
-            "url": "http://testserver/account/peertube",
+            "id": "http://localhost:9090/account/peertube",
+            "following": "http://localhost:9090/account/peertube/following",
+            "followers": "http://localhost:9090/account/peertube/followers",
+            "inbox": "http://localhost:9090/account/peertube/inbox",
+            "outbox": "http://localhost:9090/account/peertube/outbox",
+            "url": "http://localhost:9090/account/peertube",
             "name": "peertube",
             "publicKey": {
-                "id": "http://testserver/account/peertube#main-key",
-                "owner": "http://testserver/account/peertube",
+                "id": "http://localhost:9090/account/peertube#main-key",
+                "owner": "http://localhost:9090/account/peertube",
                 "publicKeyPem": mock.ANY,
             },
         }
@@ -85,7 +87,7 @@ class ActivityPubViewTest(TestCase):
                 "https://w3id.org/security/v1",
                 {"RsaSignature2017": "https://w3id.org/security#RsaSignature2017"},
             ],
-            "id": "http://testserver/account/peertube/followers/1",
+            "id": "http://localhost:9090/account/peertube/followers/1",
             "type": "Accept",
             "actor": "http://localhost:9000/accounts/peertube",
             "object": "http://localhost:5000/.well-known/peertube",

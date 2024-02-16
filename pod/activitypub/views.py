@@ -1,14 +1,11 @@
 from django.conf import settings
 from django.http import JsonResponse
 from django.urls import reverse
-from pod.activitypub.models import Follower
 
-
-ACTIVITYPUB_CONTEXT = [
-    "https://www.w3.org/ns/activitystreams",
-    "https://w3id.org/security/v1",
-    {"RsaSignature2017": "https://w3id.org/security#RsaSignature2017"},
-]
+from .constants import ACTIVITYPUB_CONTEXT
+from .constants import PEERTUBE_ACTOR_ID
+from .models import Follower
+from .utils import ap_url
 
 
 def webfinger(request):
@@ -22,9 +19,7 @@ def webfinger(request):
                 {
                     "rel": "self",
                     "type": "application/activity+json",
-                    "href": request.build_absolute_uri(
-                        reverse("activitypub:instance_account")
-                    ),
+                    "href": ap_url(reverse("activitypub:instance_account")),
                 }
             ],
         }
@@ -32,20 +27,17 @@ def webfinger(request):
 
 
 def instance_account(request):
-    instance_name = "peertube"
-    instance_actor_url = request.build_absolute_uri(
-        reverse("activitypub:instance_account")
-    )
+    instance_actor_url = ap_url(reverse("activitypub:instance_account"))
     instance_data = {
         "@context": ACTIVITYPUB_CONTEXT,
         "type": "Application",
         "id": instance_actor_url,
-        "following": request.build_absolute_uri(reverse("activitypub:following")),
-        "followers": request.build_absolute_uri(reverse("activitypub:followers")),
-        "inbox": request.build_absolute_uri(reverse("activitypub:inbox")),
-        "outbox": request.build_absolute_uri(reverse("activitypub:outbox")),
+        "following": ap_url(reverse("activitypub:following")),
+        "followers": ap_url(reverse("activitypub:followers")),
+        "inbox": ap_url(reverse("activitypub:inbox")),
+        "outbox": ap_url(reverse("activitypub:outbox")),
         "url": instance_actor_url,
-        "name": instance_name,
+        "name": PEERTUBE_ACTOR_ID,
         "publicKey": {
             "id": f"{instance_actor_url}#main-key",
             "owner": instance_actor_url,
@@ -65,7 +57,7 @@ def inbox(request):
     # TODO: test double follows
     # TODO: test HTTP signature
     follower, _ = Follower.objects.get_or_create(actor=actor)
-    followers_url = request.build_absolute_uri(reverse("activitypub:followers"))
+    followers_url = ap_url(reverse("activitypub:followers"))
     response = {
         "@context": ACTIVITYPUB_CONTEXT,
         "id": f"{followers_url}/{follower.id}",
