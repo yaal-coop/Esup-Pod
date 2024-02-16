@@ -1,5 +1,7 @@
 from django.test import TestCase
 from unittest import mock
+from pod.activitypub.models import Following
+from pod.activitypub.models import Followers
 
 
 class ActivityPubViewTest(TestCase):
@@ -57,6 +59,8 @@ class ActivityPubViewTest(TestCase):
         self.assertJSONEqual(response.content, expected)
 
     def test_accept_follows(self):
+        self.assertEqual(Followers.objects.all().count(), 0)
+
         payload = {
             "@context": [
                 "https://www.w3.org/ns/activitystreams",
@@ -77,10 +81,17 @@ class ActivityPubViewTest(TestCase):
         response = self.client.post("/account/peertube/inbox", payload, **self.headers)
 
         expected = {
-            "@context": "https://www.w3.org/ns/activitystreams",
-            "id": "https://mydomain.com/make-up-some-unique-path-for-this",
+            "@context": [
+                "https://www.w3.org/ns/activitystreams",
+                "https://w3id.org/security/v1",
+                {"RsaSignature2017": "https://w3id.org/security#RsaSignature2017"},
+            ],
+            "id": "http://testserver/account/peertube/followers/1",
             "type": "Accept",
-            "actor": "https://mydomain.com/users/paul.fournel/actor",
-            "object": "https://mastodon.social/440f4499-0ecf-49b2-bd54-ccd08e317156",
+            "actor": "http://localhost:9000/accounts/peertube",
+            "object": "http://localhost:5000/.well-known/peertube",
         }
         self.assertJSONEqual(response.content, expected)
+
+        follower = Followers.objects.get()
+        assert follower.actor == "http://localhost:9000/accounts/peertube"
