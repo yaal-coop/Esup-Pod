@@ -12,4 +12,3 @@ class FollowerAdmin(admin.ModelAdmin):
 @admin.register(Following)
 class FollowingAdmin(admin.ModelAdmin):
     pass
-
