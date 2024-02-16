@@ -136,3 +136,4 @@ USE_DEBUG_TOOLBAR = False
 activitypub_key = key = RSA.generate(2048)
 ACTIVITYPUB_PRIVATE_KEY = key.export_key().decode()
 ACTIVITYPUB_PUBLIC_KEY = key.publickey().export_key().decode()
+
