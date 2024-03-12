@@ -133,7 +133,6 @@ USE_DEBUG_TOOLBAR = False
 
 
 # Generate a temporary keypair for test purpose
-activitypub_key = key = RSA.generate(2048)
-ACTIVITYPUB_PRIVATE_KEY = key.export_key().decode()
-ACTIVITYPUB_PUBLIC_KEY = key.publickey().export_key().decode()
-
+activitypub_key = RSA.generate(2048)
+ACTIVITYPUB_PRIVATE_KEY = activitypub_key.export_key().decode()
+ACTIVITYPUB_PUBLIC_KEY = activitypub_key.publickey().export_key().decode()
