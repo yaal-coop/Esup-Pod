@@ -38,6 +38,7 @@ def instance_account(request):
         "outbox": ap_url(reverse("activitypub:outbox")),
         "url": instance_actor_url,
         "name": PEERTUBE_ACTOR_ID,
+        "preferredUsername": PEERTUBE_ACTOR_ID,
         "publicKey": {
             "id": f"{instance_actor_url}#main-key",
             "owner": instance_actor_url,

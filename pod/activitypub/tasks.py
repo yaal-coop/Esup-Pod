@@ -44,9 +44,7 @@ def send_follow_request(metadata):
     response = requests.post(
         metadata["inbox"], json=payload, headers={**BASE_HEADERS, **signature_headers}
     )
-    print(payload)
-    print(signature_headers)
-    return response.json()
+    return response.status_code == 204
 
 
 @app.task(bind=True)
