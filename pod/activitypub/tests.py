@@ -1,4 +1,5 @@
 from unittest import mock
+import json
 
 from django.test import TestCase
 
@@ -51,6 +52,7 @@ class ActivityPubViewTest(TestCase):
             "outbox": "http://localhost:9090/account/peertube/outbox",
             "url": "http://localhost:9090/account/peertube",
             "name": "peertube",
+            "preferredUsername": "peertube",
             "publicKey": {
                 "id": "http://localhost:9090/account/peertube#main-key",
                 "owner": "http://localhost:9090/account/peertube",
@@ -79,7 +81,12 @@ class ActivityPubViewTest(TestCase):
                 "signatureValue": "Cnh40KpjP7p0o1MBiTHkEHY4vXQnBOTVEkONurdlpGAvV8OAQgOCACQD8cHPE9E5W00+X7SrbzP76PTUpwCbRbxFXHiDq+9Y1dTQs5rLkDS2XSgu75XW++V95glIUUP1jxp7MfqMllxwPYjlVcM6x8jFYNVst2/QTm+Jj0IocSs=",
             },
         }
-        response = self.client.post("/account/peertube/inbox", payload, **self.headers)
+        response = self.client.post(
+            "/account/peertube/inbox",
+            json.dumps(payload),
+            content_type="application/json",
+            **self.headers,
+        )
 
         expected = {
             "@context": [
