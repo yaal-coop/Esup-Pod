@@ -3,6 +3,7 @@ import json
 
 from django.conf import settings
 from django.http import JsonResponse
+from django.http import HttpResponse
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
@@ -66,20 +67,21 @@ def inbox(request):
     # post an accept response to wannabe follower
     # receive followed instance new videos/updates activity by post
     actor = data["actor"]
-    object = data["object"]
+    # object = data["object"]
     # TODO: reject invalid objects
     # TODO: test double follows
     # TODO: test HTTP signature
     follower, _ = Follower.objects.get_or_create(actor=actor)
-    followers_url = ap_url(reverse("activitypub:followers"))
-    response = {
-        "@context": ACTIVITYPUB_CONTEXT,
-        "id": f"{followers_url}/{follower.id}",
-        "type": "Accept",
-        "actor": actor,
-        "object": object,
-    }
-    return JsonResponse(response, status=200)
+    # followers_url = ap_url(reverse("activitypub:followers"))
+    # response = {
+    #     "@context": ACTIVITYPUB_CONTEXT,
+    #     "id": f"{followers_url}/{follower.id}",
+    #     "type": "Accept",
+    #     "actor": actor,
+    #     "object": object,
+    # }
+    # return JsonResponse(response, status=200)
+    return HttpResponse(204)
 
 
 @csrf_exempt
