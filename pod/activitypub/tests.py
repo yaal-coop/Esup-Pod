@@ -1,10 +1,9 @@
-from unittest import mock
 import json
+from unittest import mock
 
 from django.test import TestCase
 
 from pod.activitypub.models import Follower
-from pod.activitypub.models import Following
 
 
 class ActivityPubViewTest(TestCase):
