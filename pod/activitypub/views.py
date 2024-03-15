@@ -1,6 +1,7 @@
 import logging
 import json
 
+
 from django.conf import settings
 from django.http import JsonResponse
 from django.http import HttpResponse
@@ -9,8 +10,8 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .constants import ACTIVITYPUB_CONTEXT
 from .constants import PEERTUBE_ACTOR_ID
-from .models import Follower
 from .utils import ap_url
+from .tasks import send_accept_request
 
 logger = logging.getLogger(__name__)
 
@@ -63,24 +64,14 @@ def instance_account(request):
 def inbox(request):
     data = json.loads(request.body.decode())
     logger.warning(f"inbox data: {data}")
-    # receive follow request by post
-    # post an accept response to wannabe follower
-    # receive followed instance new videos/updates activity by post
-    actor = data["actor"]
-    # object = data["object"]
     # TODO: reject invalid objects
     # TODO: test double follows
     # TODO: test HTTP signature
-    follower, _ = Follower.objects.get_or_create(actor=actor)
-    # followers_url = ap_url(reverse("activitypub:followers"))
-    # response = {
-    #     "@context": ACTIVITYPUB_CONTEXT,
-    #     "id": f"{followers_url}/{follower.id}",
-    #     "type": "Accept",
-    #     "actor": actor,
-    #     "object": object,
-    # }
-    # return JsonResponse(response, status=200)
+
+    # TODO: make an async call from this
+    if data["type"] == "Follow":
+        send_accept_request(actor=data["actor"], object=data["object"])
+
     return HttpResponse(204)
 
 
