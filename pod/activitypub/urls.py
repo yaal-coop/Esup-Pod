@@ -6,6 +6,7 @@ app_name = "activitypub"
 
 
 urlpatterns = [
+    path(".well-known/nodeinfo", views.nodeinfo, name="nodeinfo"),
     path(".well-known/webfinger", views.webfinger, name="webfinger"),
     path("account/peertube", views.instance_account, name="instance_account"),
     path("account/peertube/inbox", views.inbox, name="inbox"),

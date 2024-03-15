@@ -15,6 +15,8 @@ from pod.main.celery import app
 
 
 logger = logging.getLogger(__name__)
+
+
 def get_peertube_account_url(url):
     parsed = urlparse(url)
     # TODO: handle exceptions
@@ -36,7 +38,7 @@ def get_peertube_account_metadata(domain):
 def send_accept_request(actor, object):
     logging.warning(f"read {actor}")
     actor_account = requests.get(actor, headers=BASE_HEADERS).json()
-    inbox = actor_account['inbox']
+    inbox = actor_account["inbox"]
 
     follower, _ = Follower.objects.get_or_create(actor=actor)
     followers_url = ap_url(reverse("activitypub:followers"))
@@ -53,6 +55,7 @@ def send_accept_request(actor, object):
         inbox, json=payload, headers={**BASE_HEADERS, **signature_headers}
     )
     return response.status_code == 204
+
 
 def send_follow_request(metadata):
     # TODO: handle rejects
