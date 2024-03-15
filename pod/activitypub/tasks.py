@@ -1,16 +1,20 @@
+import logging
+from urllib.parse import urlparse
+
 import requests
 from django.urls import reverse
 
 from .constants import ACTIVITYPUB_CONTEXT
 from .constants import BASE_HEADERS
 from .constants import PEERTUBE_ACTOR_ID
+from .models import Follower
 from .models import Following
 from .utils import ap_url
 from .utils import signed_payload_headers
 from pod.main.celery import app
-from urllib.parse import urlparse
 
 
+logger = logging.getLogger(__name__)
 def get_peertube_account_url(url):
     parsed = urlparse(url)
     # TODO: handle exceptions
@@ -28,6 +32,27 @@ def get_peertube_account_metadata(domain):
     response = requests.get(account_url, headers=BASE_HEADERS)
     return response.json()
 
+
+def send_accept_request(actor, object):
+    logging.warning(f"read {actor}")
+    actor_account = requests.get(actor, headers=BASE_HEADERS).json()
+    inbox = actor_account['inbox']
+
+    follower, _ = Follower.objects.get_or_create(actor=actor)
+    followers_url = ap_url(reverse("activitypub:followers"))
+    payload = {
+        "@context": ACTIVITYPUB_CONTEXT,
+        "id": f"{followers_url}/{follower.id}",
+        "type": "Accept",
+        "actor": actor,
+        "object": object,
+    }
+    logging.warning(f"send {inbox} {payload}")
+    signature_headers = signed_payload_headers(payload, inbox)
+    response = requests.post(
+        inbox, json=payload, headers={**BASE_HEADERS, **signature_headers}
+    )
+    return response.status_code == 204
 
 def send_follow_request(metadata):
     # TODO: handle rejects
