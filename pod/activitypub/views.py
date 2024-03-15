@@ -16,6 +16,25 @@ from .tasks import send_accept_request
 logger = logging.getLogger(__name__)
 
 
+def nodeinfo(request):
+    return JsonResponse(
+        {
+            "links": [
+                {
+                    "rel": "http://nodeinfo.diaspora.software/ns/schema/2.0",
+                    "href": ap_url("/nodeinfo/2.0.json"),
+                },
+                {
+                    "rel": "https://www.w3.org/ns/activitystreams#Application",
+                    #"href": f"http://localhost:9000/accounts/{PEERTUBE_ACTOR_ID}",
+                    "href": ap_url(reverse("activitypub:instance_account")),
+                },
+            ]
+        },
+        status=200,
+    )
+
+
 @csrf_exempt
 def webfinger(request):
     logger.info("webfinger")
@@ -62,7 +81,7 @@ def instance_account(request):
 
 @csrf_exempt
 def inbox(request):
-    data = json.loads(request.body.decode())
+    data = json.loads(request.body.decode()) if request.body else None
     logger.warning(f"inbox data: {data}")
     # TODO: reject invalid objects
     # TODO: test double follows
@@ -77,20 +96,23 @@ def inbox(request):
 
 @csrf_exempt
 def outbox(request):
-    logger.info("outbox")
+    data = json.loads(request.body.decode()) if request.body else None
+    logger.warning(f"outbox data: {data}")
     # list all current instance videos
     return JsonResponse({}, status=200)
 
 
 @csrf_exempt
 def following(request):
-    logger.info("following")
+    data = json.loads(request.body.decode()) if request.body else None
+    logger.warning(f"following data: {data}")
     # list all followed instances
     return JsonResponse({}, status=200)
 
 
 @csrf_exempt
 def followers(request):
-    logger.info("followers")
+    data = json.loads(request.body.decode()) if request.body else None
+    logger.warning(f"followers data: {data}")
     # list all current instance followers
     return JsonResponse({}, status=200)

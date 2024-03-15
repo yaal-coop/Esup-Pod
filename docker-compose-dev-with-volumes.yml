@@ -6,6 +6,7 @@ x-elasticsearch-volumes: &elasticsearch-volumes
 
 services:
   pod:
+    hostname: pod.local
     container_name: pod-dev-with-volumes
     hostname: pod.localhost
     build:
@@ -45,6 +46,7 @@ services:
 
   peertube:
     container_name: peertube
+    hostname: peertube.local
     image: chocobozzz/peertube:develop-bookworm
     ports:
       - 9000:9000
