@@ -43,6 +43,36 @@ services:
     ports:
       - 6379:6379
 
+  peertube:
+    container_name: peertube
+    image: chocobozzz/peertube:develop-bookworm
+    ports:
+      - 9000:9000
+      - 3000:3000
+    env_file:
+      - peertube.env
+    depends_on:
+      - postgres
+      - redis
+      - postfix
+    restart: "always"
+
+  postgres:
+    image: postgres:13-alpine
+    env_file:
+      - peertube.env
+    volumes:
+      - ./docker-volume/db:/var/lib/postgresql/data
+    restart: "always"
+
+  postfix:
+    image: mwader/postfix-relay
+    env_file:
+      - peertube.env
+    volumes:
+      - ./docker-volume/opendkim/keys:/etc/opendkim/keys
+    restart: "always"
+
 #  redis-commander:
 #    container_name: redis-commander
 #    hostname: redis-commander.localhost
