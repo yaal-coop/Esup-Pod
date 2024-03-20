@@ -35,22 +35,26 @@ def get_peertube_account_metadata(domain):
     return response.json()
 
 
-def send_accept_request(actor, object):
-    logging.warning(f"read {actor}")
-    actor_account = requests.get(actor, headers=BASE_HEADERS).json()
+def send_accept_request(follow_actor, follow_object, follow_id):
+    logging.warning(f"read {follow_actor}")
+    actor_account = requests.get(follow_actor, headers=BASE_HEADERS).json()
     inbox = actor_account["inbox"]
 
-    follower, _ = Follower.objects.get_or_create(actor=actor)
-    followers_url = ap_url(reverse("activitypub:followers"))
+    follower, _ = Follower.objects.get_or_create(actor=follow_actor)
     payload = {
         "@context": ACTIVITYPUB_CONTEXT,
-        "id": f"{followers_url}/{follower.id}",
+        "id": ap_url(f"/accepts/follows/{follower.id}"),
         "type": "Accept",
-        "actor": actor,
-        "object": object,
+        "actor": follow_object,
+        "object": {
+            "type": "Follow",
+            "id": follow_id,
+            "actor": follow_actor,
+            "object": follow_object,
+        },
     }
-    logging.warning(f"send {inbox} {payload}")
     signature_headers = signed_payload_headers(payload, inbox)
+    logging.warning(f"send {inbox}\n{signature_headers}\n{payload}")
     response = requests.post(
         inbox, json=payload, headers={**BASE_HEADERS, **signature_headers}
     )
