@@ -57,6 +57,7 @@ services:
       - postgres
       - redis
       - postfix
+    command: sh -c "yarn install && npm run dev"
     restart: "always"
 
   postgres:
