@@ -13,4 +13,5 @@ urlpatterns = [
     path("account/peertube/outbox", views.outbox, name="outbox"),
     path("account/peertube/following", views.following, name="following"),
     path("account/peertube/followers", views.followers, name="followers"),
+    path("activitypub/videos/<slug:slug>", views.video, name="video"),
 ]

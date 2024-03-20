@@ -2,6 +2,7 @@ import logging
 import json
 
 
+from django.shortcuts import get_object_or_404
 from django.conf import settings
 from django.http import JsonResponse
 from django.http import HttpResponse
@@ -9,11 +10,15 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
 from .constants import ACTIVITYPUB_CONTEXT
+from .constants import PEERTUBE_CONTEXT
 from .constants import PEERTUBE_ACTOR_ID
 from .utils import ap_url
+from pod.video.models import Video
 from .tasks import send_accept_request
 
 logger = logging.getLogger(__name__)
+
+AP_PAGE_SIZE = 25
 
 
 def nodeinfo(request):
@@ -100,9 +105,60 @@ def inbox(request):
 @csrf_exempt
 def outbox(request):
     data = json.loads(request.body.decode()) if request.body else None
-    logger.warning(f"outbox query: {data}")
+    logger.warning(f"outbox query: \n{data}\n{request.POST}\n{request.GET}")
     # list all current instance videos
-    response = {}
+    video_query = Video.objects.filter(is_restricted=False)
+    nb_videos = video_query.count()
+    page = int(request.GET.get("page", 0))
+    if page:
+        first_index = (page - 1) * AP_PAGE_SIZE
+        last_index = min(nb_videos, first_index + AP_PAGE_SIZE)
+        items = video_query[first_index:last_index].all()
+        next_page = page + 1 if (page + 1) * AP_PAGE_SIZE < nb_videos else None
+        response = {
+            "@context": ACTIVITYPUB_CONTEXT,
+            "id": ap_url(reverse("activitypub:outbox")),
+            "type": "OrderedCollection",
+            "totalItems": nb_videos,
+            "orderedItems": [
+                {
+                    "to": ["https://www.w3.org/ns/activitystreams#Public"],
+                    "cc": [ap_url(reverse("activitypub:followers"))],
+                    "type": "Announce",
+                    "id": ap_url(
+                        reverse("activitypub:video", kwargs={"slug": item.slug})
+                    )
+                    + "/announces/1",
+                    "actor": ap_url(reverse("activitypub:instance_account")),
+                    "object": ap_url(
+                        reverse("activitypub:video", kwargs={"slug": item.slug})
+                    ),
+                }
+                for item in items
+            ],
+        }
+        if next_page:
+            response["next"] = (
+                ap_url(reverse("activitypub:outbox")) + "?page=" + next_page
+            )
+
+    elif nb_videos:
+        response = {
+            "@context": ACTIVITYPUB_CONTEXT,
+            "id": ap_url(reverse("activitypub:outbox")),
+            "type": "OrderedCollection",
+            "totalItems": nb_videos,
+            "first": ap_url(reverse("activitypub:outbox")) + "?page=1",
+        }
+
+    else:
+        response = {
+            "@context": ACTIVITYPUB_CONTEXT,
+            "id": ap_url(reverse("activitypub:outbox")),
+            "type": "OrderedCollection",
+            "totalItems": 0,
+        }
+
     logger.warning(f"outbox response: {response}")
     return JsonResponse(response, status=200)
 
@@ -137,37 +193,107 @@ def followers(request):
     return JsonResponse(response, status=200)
 
 
-pod = {
-    "@context": [
-        "https://www.w3.org/ns/activitystreams",
-        "https://w3id.org/security/v1",
-        {"RsaSignature2017": "https://w3id.org/security#RsaSignature2017"},
-    ],
-    "id": "http://pod.local:8080/account/peertube/followers/2",
-    "type": "Accept",
-    "actor": "http://peertube.local:9000/accounts/peertube",
-    "object": "http://pod.local:8080/account/peertube",
-}
+@csrf_exempt
+def video(request, slug):
+    data = json.loads(request.body.decode()) if request.body else None
+    logger.warning(f"video data: {data}")
+    video = get_object_or_404(Video, slug=slug)
+    response = {
+        "@context": ACTIVITYPUB_CONTEXT + [PEERTUBE_CONTEXT],
+        "id": ap_url(reverse("activitypub:video", kwargs={"slug": slug})),
+        "to": ["https://www.w3.org/ns/activitystreams#Public"],
+        "cc": ["https://tube.aquilenet.fr/accounts/user/followers"],
+        "type": "Video",
+        "name": video.title,
+        # duration must fit the xsd:duration format
+        # https://www.w3.org/TR/xmlschema11-2/#duration
+        "duration": f"PT{video.duration}S",
+        "uuid": "aad71797-78b9-4b5a-a3d6-f93fae80b7e7",
+        "category": {"identifier": "11", "name": "News & Politics"},  # video.type
+        "views": video.viewcount,
+        #        "sensitive": false,
+        "waitTranscoding": video.encoding_in_progress,
+        #        "state": 1,
+        "commentsEnabled": not video.disable_comment,
+        "downloadEnabled": video.allow_downloading,
+        "published": video.date_added.isoformat(),  # "2024-03-19T08:46:49.185Z",
+        #        "originallyPublishedAt": null,
+        #        "updated": "2024-03-19T08:46:49.185Z",
+        "tag": [],  # video.type
+        #        "mediaType": "text/markdown",
+        #        "content": null,
+        #        "support": null,
+        #        "subtitleLanguage": [],
+        #        "icon": [
+        #            {
+        #                "type": "Image",
+        #                "url": "https://tube.aquilenet.fr/lazy-static/thumbnails/0d18ad55-f86d-4548-957c-fa0f26e3443b.jpg",
+        #                "mediaType": "image/jpeg",
+        #                "width": 280,
+        #                "height": 157,
+        #            },
+        #        ],
+        #        "preview": [  # video.overview
+        #            {
+        #                "type": "Image",
+        #                "rel": ["storyboard"],
+        #                "url": [
+        #                    {
+        #                        "mediaType": "image/jpeg",
+        #                        "href": "https://tube.aquilenet.fr/lazy-static/storyboards/4e2b2c7e-d3aa-4de4-b264-ce9d258419e5.jpg",
+        #                        "width": 1920,
+        #                        "height": 1080,
+        #                        "tileWidth": 192,
+        #                        "tileHeight": 108,
+        #                        "tileDuration": "PT1S",
+        #                    }
+        #                ],
+        #            }
+        #        ],
+        "url": [
+            {
+                "type": "Link",
+                "mediaType": "text/html",
+                "href": reverse("video:video", args=(video.slug,)),
+            },
+            {
+                "type": "Link",
+                "mediaType": "video/mp4",
+                "href": video.get_video_mp4_json(),
+                "height": 720,
+                "size": 16555783,
+                "fps": 24,
+            },
+        ],
+        #        "likes": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/likes",
+        #        "dislikes": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/dislikes",
+        #        "shares": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/announces",
+        #        "comments": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/comments",  # notecomments
+        #        "hasParts": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/chapters",
+        "attributedTo": [
+            {
+                "type": "Person",
+                "id": ap_url(reverse("activitypub:instance_account")),  # video.owner
+            },
+            #            {
+            #                "type": "Group",
+            #                "id": "https://tube.aquilenet.fr/video-channels/channel",  # video.channel
+            #            },
+        ],
+        #        "isLiveBroadcast": false,
+        #        "liveSaveReplay": null,
+        #        "permanentLive": null,
+        #        "latencyMode": null,
+        #        "peertubeLiveChat": false,
+    }
+    if video.licence:
+        response["licence"] = {"identifier": video.licence, "name": video.get_licence()}
 
-peertube = {
-    "@context": [
-        "https://www.w3.org/ns/activitystreams",
-        "https://w3id.org/security/v1",
-        {"RsaSignature2017": "https://w3id.org/security#RsaSignature2017"},
-    ],
-    "type": "Accept",
-    "id": "http://peertube.local:9000/accepts/follows/37",
-    "actor": "http://peertube.local:9000/accounts/peertube",
-    "object": {
-        "type": "Follow",
-        "id": "http://pod.local:8080/account/peertube/following/2",
-        "actor": "http://pod.local:8080/account/peertube",
-        "object": "http://peertube.local:9000/accounts/peertube",
-    },
-    "signature": {
-        "type": "RsaSignature2017",
-        "creator": "http://peertube.local:9000/accounts/peertube",
-        "created": "2024-03-20T13:09:17.178Z",
-        "signatureValue": "HGLedQAXswjsp31xqfBsDFSrZ8QQx0k+nvheYtoDrb3sIZoEYJBOb4XQkl022dIBRN/OfcQjOoHVIoKgo56H6Twdj7F7EWP9B80jbOR2S6U2mp6jnNtrn6fWuf1mcS9GaM4F/O2WHo9oqpt/tkosNiSsrGDUQsSH0/Ml7Krn0eI=",
-    },
-}
+    if video.main_lang:
+        response["language"] = {
+            "identifier": video.main_lang,
+            "name": video.get_main_lang(),
+        }
+
+    logger.warning(f"video response: {response}")
+    return JsonResponse(response, status=200)
