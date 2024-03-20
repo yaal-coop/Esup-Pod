@@ -57,7 +57,7 @@ services:
       - postgres
       - redis
       - postfix
-    command: sh -c "yarn install && npm run dev"
+    command: sh -c "apt update && apt install --yes neovim ripgrep && yarn install && npm run dev"
     restart: "always"
 
   postgres:
