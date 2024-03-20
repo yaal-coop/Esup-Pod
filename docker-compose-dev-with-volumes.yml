@@ -57,6 +57,8 @@ services:
       - postgres
       - redis
       - postfix
+    volumes:
+      - ./docker-volume/app/data:/data
     command: sh -c "apt update && apt install --yes neovim ripgrep && yarn install && npm run dev"
     restart: "always"
 
