@@ -250,21 +250,26 @@ def video(request, slug):
         #                ],
         #            }
         #        ],
-        "url": [
-            {
-                "type": "Link",
-                "mediaType": "text/html",
-                "href": reverse("video:video", args=(video.slug,)),
-            },
-            {
-                "type": "Link",
-                "mediaType": "video/mp4",
-                "href": video.get_video_mp4_json(),
-                "height": 720,
-                "size": 16555783,
-                "fps": 24,
-            },
-        ],
+        "url": (
+            [
+                {
+                    "type": "Link",
+                    "mediaType": "text/html",
+                    "href": reverse("video:video", args=(video.slug,)),
+                },
+            ]
+            + [
+                {
+                    "type": "Link",
+                    "mediaType": "video/mp4",
+                    "href": ap_url(mp4["src"]),
+                    "height": mp4["height"],
+                    #                "size": 16555783,
+                    #                "fps": 24,
+                }
+                for mp4 in video.get_video_mp4_json()
+            ]
+        ),
         #        "likes": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/likes",
         #        "dislikes": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/dislikes",
         #        "shares": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/announces",
