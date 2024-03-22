@@ -13,6 +13,7 @@ from .constants import AP_DEFAULT_CONTEXT
 from .constants import AP_PT_VIDEO_CONTEXT
 from .constants import AP_PT_CHANNEL_CONTEXT
 from .constants import PEERTUBE_ACTOR_ID
+from django.contrib.auth.models import User
 from .utils import ap_url
 from pod.video.models import Video
 from pod.video.models import Channel
@@ -24,7 +25,6 @@ AP_PAGE_SIZE = 25
 
 
 def nodeinfo(request):
-    logger.warning("nodeinfo")
     response = {
         "links": [
             {
@@ -38,12 +38,12 @@ def nodeinfo(request):
             },
         ]
     }
+    logger.warning(f"nodeinfo response: {response}")
     return JsonResponse(response, status=200)
 
 
 @csrf_exempt
 def webfinger(request):
-    logger.warning("webfinger")
     # TODO: reject accounts that are not peertube@THISDOMAIN
 
     resource = request.GET.get("resource", "")
@@ -58,14 +58,14 @@ def webfinger(request):
                 }
             ],
         }
+        logger.warning(f"webfinger response: {response}")
         return JsonResponse(response, status=200)
 
 
 @csrf_exempt
 def instance_account(request):
-    logger.warning("instance_account")
     instance_actor_url = ap_url(reverse("activitypub:instance_account"))
-    instance_data = {
+    response = {
         "@context": AP_DEFAULT_CONTEXT,
         "type": "Application",
         "id": instance_actor_url,
@@ -82,7 +82,51 @@ def instance_account(request):
             "publicKeyPem": settings.ACTIVITYPUB_PUBLIC_KEY,
         },
     }
-    return JsonResponse(instance_data, status=200)
+    logger.warning(f"instance_account response: {response}")
+    return JsonResponse(response, status=200)
+
+
+@csrf_exempt
+def user(request, username):
+    user = get_object_or_404(User, username=username)
+    instance_actor_url = ap_url(reverse("activitypub:instance_account"))
+    response = {
+        "@context": AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT],
+        "type": "Person",
+        "id": ap_url(reverse("activitypub:user", kwargs={"username": username})),
+        "url": ap_url(reverse("activitypub:user", kwargs={"username": username})),
+        # "following": "https://tube.aquilenet.fr/accounts/eloi/following",
+        # "followers": "https://tube.aquilenet.fr/accounts/eloi/followers",
+        # "playlists": "https://tube.aquilenet.fr/accounts/eloi/playlists",
+        "inbox": ap_url(
+            reverse("activitypub:user", kwargs={"username": username}) + "/inbox"
+        ),
+        # "outbox": "https://tube.aquilenet.fr/accounts/eloi/outbox",
+        "preferredUsername": user.username,
+        "name": user.get_full_name() or user.username,
+        # "endpoints": {"sharedInbox": "https://tube.aquilenet.fr/inbox"},
+        # needed by peertube
+        "publicKey": {
+            "id": f"{instance_actor_url}#main-key",
+            "owner": instance_actor_url,
+            "publicKeyPem": settings.ACTIVITYPUB_PUBLIC_KEY,
+        },
+        # "published": "2019-09-09T12:16:39.267Z",
+        "summary": user.owner.commentaire,
+    }
+
+    if user.owner.userpicture:
+        response["icon"] = [
+            {
+                "type": "Image",
+                "url": user.owner.userpicture.file.url,
+                # "height": 48,
+                # "width": 48,
+                "mediaType": user.owner.userpicture.file_type,
+            },
+        ]
+
+    return JsonResponse(response, status=200)
 
 
 @csrf_exempt
@@ -106,8 +150,6 @@ def inbox(request):
 
 @csrf_exempt
 def outbox(request):
-    data = json.loads(request.body.decode()) if request.body else None
-    logger.warning(f"outbox query: \n{data}\n{request.POST}\n{request.GET}")
     # list all current instance videos
     video_query = Video.objects.filter(is_restricted=False)
     nb_videos = video_query.count()
@@ -167,8 +209,6 @@ def outbox(request):
 
 @csrf_exempt
 def following(request):
-    data = json.loads(request.body.decode()) if request.body else None
-    logger.warning(f"following query: {data}")
     # list all followed instances
     response = {
         "@context": AP_DEFAULT_CONTEXT,
@@ -182,8 +222,6 @@ def following(request):
 
 @csrf_exempt
 def followers(request):
-    data = json.loads(request.body.decode()) if request.body else None
-    logger.warning(f"followers data: {data}")
     # list all current instance followers
     response = {
         "@context": AP_DEFAULT_CONTEXT,
@@ -197,8 +235,6 @@ def followers(request):
 
 @csrf_exempt
 def video(request, slug):
-    data = json.loads(request.body.decode()) if request.body else None
-    logger.warning(f"video data: {data}")
     video = get_object_or_404(Video, slug=slug)
     response = {
         "@context": AP_DEFAULT_CONTEXT + [AP_PT_VIDEO_CONTEXT],
@@ -249,16 +285,21 @@ def video(request, slug):
             ]
         ),
         "attributedTo": [
-            # TODO: video.owner
             # needed by peertube
             {
                 "type": "Person",
-                "id": ap_url(reverse("activitypub:instance_account")),
+                "id": ap_url(
+                    reverse(
+                        "activitypub:user", kwargs={"username": video.owner.username}
+                    )
+                ),
             },
-            ] + [
+        ]
+        + [
             # needed by peertube
             # TODO: ask peertube to make this optional
             # currently an error "Cannot find associated video channel to video" is raised
+            # in the meantime, implement a default channel for users
             {
                 "type": "Group",
                 "id": ap_url(
@@ -272,6 +313,12 @@ def video(request, slug):
         # TODO: video.description
         #        "mediaType": "text/markdown",
         #        "content": null,
+        # needed by peertube
+        # TODO: ask to make likes/dislikes/shares/comments optional
+        "likes": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
+        "dislikes": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
+        "shares": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
+        "comments": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
         #        "state": 1,
         #        "originallyPublishedAt": null,
         #        "support": null,
@@ -293,10 +340,6 @@ def video(request, slug):
         #                ],
         #            }
         #        ],
-        #        "likes": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/likes",
-        #        "dislikes": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/dislikes",
-        #        "shares": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/announces",
-        #        "comments": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/comments",  # notecomments
         #        "hasParts": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/chapters",
         #        "isLiveBroadcast": false,
         #        "liveSaveReplay": null,
@@ -334,9 +377,9 @@ def video(request, slug):
 
 @csrf_exempt
 def channel(request, slug):
-    data = json.loads(request.body.decode()) if request.body else None
-    logger.warning(f"video data: {data}")
     channel = get_object_or_404(Channel, slug=slug)
+    instance_actor_url = ap_url(reverse("activitypub:instance_account"))
+    # https://github.com/Chocobozzz/PeerTube/blob/8da3e2e9b8229215e3eeb030b491a80cf37f889d/server/core/helpers/custom-validators/activitypub/actor.ts#L62
     response = {
         "@context": AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT],
         "type": "Group",
@@ -344,17 +387,23 @@ def channel(request, slug):
         # "following": "https://tube.aquilenet.fr/video-channels/USER_channel/following",
         # "followers": "https://tube.aquilenet.fr/video-channels/USER_channel/followers",
         # "playlists": "https://tube.aquilenet.fr/video-channels/USER_channel/playlists",
-        # "inbox": "https://tube.aquilenet.fr/video-channels/USER_channel/inbox",
+        # needed by peertube
+        # this is a fake URL and is not intented to be reached
+        "inbox": ap_url(reverse("activitypub:channel", kwargs={"slug": slug}))
+        + "/inbox",
         # "outbox": "https://tube.aquilenet.fr/video-channels/USER_channel/outbox",
-        "preferredUsername": channel.title,
+        # needed by peertube, seems to not support spaces
+        "preferredUsername": channel.slug,
+        # needed by peertube
         "url": ap_url(reverse("activitypub:channel", kwargs={"slug": slug})),
         "name": channel.title,
         # "endpoints": {"sharedInbox": "https://tube.aquilenet.fr/inbox"},
-        # "publicKey": {
-        #    "id": "https://tube.aquilenet.fr/video-channels/USER_channel#main-key",
-        #    "owner": "https://tube.aquilenet.fr/video-channels/USER_channel",
-        #    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3yvqok7x+4LvbA0y+yJo\nJ+yrAjoEshcJiis+1TDrsxuVRfxCpBnzurWsPAGg1VH3T1W6kNhThaVXpn/zXm4E\nfS5U7yqM0ME4qcmcLy69MoAtrJPZQHfIBK31Q1rEnFrqo7dSLXOaaajPfo8d+H9t\n0ixW6WhObLZZ8fMTXSa2xcLz2Dnzu5XIFk7tzh5+0ya9G1HuBmPbCmmp1PKrvFpt\nSX5YBgECLRAVLiyfnzrfsLbO+IAHOt+pCZvUovnlILiAAeSUY8dkLsGo8gONLPx+\nxBYQvm6pjpnqLRQltYQruEydzUnGO8A6Fwm+JGfFu0uQhH0LvKSJG1vMTx18JhUd\naQIDAQAB\n-----END PUBLIC KEY-----",
-        # },
+        # needed by peertube
+        "publicKey": {
+            "id": f"{instance_actor_url}#main-key",
+            "owner": instance_actor_url,
+            "publicKeyPem": settings.ACTIVITYPUB_PUBLIC_KEY,
+        },
         # "published": "2020-11-29T21:53:21.363Z",
         # "icon": [
         #    {
@@ -373,23 +422,76 @@ def channel(request, slug):
         #    },
         # ],
         "summary": channel.description,
-        "support": None,
+        # "support": None,
+        # needed by peertube
         "attributedTo": [
             {
                 "type": "Person",
-                "id": ap_url(reverse("activitypub:instance_account")),
+                "id": ap_url(
+                    reverse("activitypub:user", kwargs={"username": owner.username})
+                ),
             }
+            for owner in channel.owners.all()
         ],
     }
 
     if channel.headband:
         response["image"] = {
             "type": "Image",
-            "mediaType": channel.headband.file.url,
+            "url": channel.headband.file.url,
             # "height": 317,
             # "width": 1920,
-            "url": channel.headband.file_type,
+            "mediaType": channel.headband.file_type,
         }
 
     logger.warning(f"video response: {response}")
+    return JsonResponse(response, status=200)
+
+
+@csrf_exempt
+def likes(request, slug):
+    video = get_object_or_404(Video, slug=slug)
+    response = {
+        "@context": AP_DEFAULT_CONTEXT,
+        "id": ap_url(reverse("activitypub:likes", kwargs={"slug": slug})),
+        "type": "OrderedCollection",
+        "totalItems": 0,
+    }
+    return JsonResponse(response, status=200)
+
+
+@csrf_exempt
+def dislikes(request, slug):
+    video = get_object_or_404(Video, slug=slug)
+    response = {
+        "@context": AP_DEFAULT_CONTEXT,
+        "id": ap_url(reverse("activitypub:dislikes", kwargs={"slug": slug})),
+        "type": "OrderedCollection",
+        "totalItems": 0,
+    }
+    return JsonResponse(response, status=200)
+
+
+@csrf_exempt
+def shares(request, slug):
+    video = get_object_or_404(Video, slug=slug)
+    response = {
+        "@context": AP_DEFAULT_CONTEXT,
+        "id": ap_url(reverse("activitypub:shares", kwargs={"slug": slug})),
+        "type": "OrderedCollection",
+        "totalItems": 0,
+    }
+    return JsonResponse(response, status=200)
+
+
+@csrf_exempt
+def comments(request, slug):
+    video = get_object_or_404(Video, slug=slug)
+    # TODO: video.notecomments
+    response = {
+        "@context": AP_DEFAULT_CONTEXT,
+        "id": ap_url(reverse("activitypub:comments", kwargs={"slug": slug})),
+        "type": "OrderedCollection",
+        "totalItems": 0,
+    }
     return JsonResponse(response, status=200)

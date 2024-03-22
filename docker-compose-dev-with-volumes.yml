@@ -58,7 +58,8 @@ services:
       - redis
       - postfix
     volumes:
-      - ./docker-volume/app/data:/data
+      - ./docker-volume/peertube/data:/data
+      - ./docker-volume/peertube/config:/config
     command: sh -c "apt update && apt install --yes neovim ripgrep && yarn install && npm run dev"
     restart: "always"
 
@@ -67,7 +68,7 @@ services:
     env_file:
       - peertube.env
     volumes:
-      - ./docker-volume/db:/var/lib/postgresql/data
+      - ./docker-volume/postgresql:/var/lib/postgresql/data
     restart: "always"
 
   postfix:
