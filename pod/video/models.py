@@ -1249,6 +1249,7 @@ class Video(models.Model):
                     "id": media.id,
                     "type": media.encoding_format,
                     "src": media.source_file.url,
+                    "size": media.source_file.size,
                     "height": media_height,
                     "extension": file_extension,
                     "label": media.name,
