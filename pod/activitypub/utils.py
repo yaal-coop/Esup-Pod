@@ -1,6 +1,8 @@
 import base64
 import email.utils
+import hashlib
 import json
+import uuid
 from urllib.parse import urlparse
 
 from Crypto.Hash import SHA256
@@ -12,12 +14,20 @@ from django.urls import reverse
 
 
 def ap_url(suffix=""):
+    """Returns a full URL to be used in activitypub context."""
     scheme = "https" if getattr(settings, "SECURE_SSL_REDIRECT") else "http"
     current_site = Site.objects.get_current()
     return f"{scheme}://{current_site.domain}{suffix}"
 
 
 def signed_payload_headers(payload, url):
+    """Signs JSON-LD payload according to the 'Signing HTTP Messages' RFC draft.
+    This brings compatibility with peertube (and mastodon for instance).
+
+    More information here:
+        - https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12
+        - https://framacolibri.org/t/rfc9421-replaces-the-signing-http-messages-draft/20911/2
+    """
     date = email.utils.formatdate(usegmt=True)
     private_key = RSA.import_key(settings.ACTIVITYPUB_PRIVATE_KEY)
     payload_json = json.dumps(payload)
@@ -46,3 +56,11 @@ def signed_payload_headers(payload, url):
         "signature": signature_header,
     }
     return request_headers
+
+
+def stable_uuid(seed):
+    """Always returns the same UUID given the same input string."""
+    full_seed = str(seed) + settings.SECRET_KEY
+    m = hashlib.md5()
+    m.update(full_seed.encode("utf-8"))
+    return uuid.UUID(m.hexdigest())

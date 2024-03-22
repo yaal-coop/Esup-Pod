@@ -1,23 +1,24 @@
-import logging
 import json
+import logging
 
-
-from django.shortcuts import get_object_or_404
 from django.conf import settings
-from django.http import JsonResponse
+from django.contrib.auth.models import User
 from django.http import HttpResponse
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.template.defaultfilters import slugify
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
 from .constants import AP_DEFAULT_CONTEXT
-from .constants import AP_PT_VIDEO_CONTEXT
 from .constants import AP_PT_CHANNEL_CONTEXT
+from .constants import AP_PT_VIDEO_CONTEXT
 from .constants import INSTANCE_ACTOR_ID
-from django.contrib.auth.models import User
-from .utils import ap_url
-from pod.video.models import Video
-from pod.video.models import Channel
 from .tasks import send_accept_request
+from .utils import ap_url
+from .utils import stable_uuid
+from pod.video.models import Channel
+from pod.video.models import Video
 
 logger = logging.getLogger(__name__)
 
@@ -227,6 +228,7 @@ def followers(request, username=None):
 
 @csrf_exempt
 def video(request, slug):
+    # TODO: ask for a better error description than 'maybe not a video object'
     video = get_object_or_404(Video, slug=slug)
     response = {
         "@context": AP_DEFAULT_CONTEXT + [AP_PT_VIDEO_CONTEXT],
@@ -238,8 +240,8 @@ def video(request, slug):
         # duration must fit the xsd:duration format
         # https://www.w3.org/TR/xmlschema11-2/#duration
         "duration": f"PT{video.duration}S",
-        # TODO: uuid is needed
-        "uuid": "aad71797-78b9-4b5a-a3d6-f93fae80b7e7",
+        # TODO: needed by peertube - ask peertube why is it for
+        "uuid": stable_uuid(video.id),
         # TODO
         # "category": {"identifier": "11", "name": "News & Politics & shit"},  # video.type
         # needed by peertube
@@ -247,17 +249,18 @@ def video(request, slug):
         "waitTranscoding": video.encoding_in_progress,
         "commentsEnabled": not video.disable_comment,
         "downloadEnabled": video.allow_downloading,
-        # TODO: peertube dates ends with Z
-        # "2024-03-19T08:46:49.185Z"
         # needed by peertube
         "published": video.date_added.isoformat(),
         # needed by peertube
         "updated": video.date_added.isoformat(),
-        # TODO
-        "tag": [],  # video.type
+        "tag": [
+# TODO: uncomment and check
+#            {"type": "Hashtag", "name": slugify(tag)} for tag in video.tags.split(" ")
+        ],
         "url": (
             [
                 {
+                    # Webpage
                     "type": "Link",
                     "mediaType": "text/html",
                     "href": ap_url(reverse("video:video", args=(video.slug,))),
@@ -265,12 +268,14 @@ def video(request, slug):
             ]
             + [
                 {
+                    # MP4 link
                     "type": "Link",
-                    "mediaType": "video/mp4",
+                    "mediaType": mp4["type"],
                     "href": ap_url(mp4["src"]),
                     "height": mp4["height"],
-                    # size and fps are not available
-                    # "size": 16555783,
+                    # TODO: uncomment and check
+#                    "size": mp4["size"],
+                    # fps is not available - TODO: check if it is really needed by peertube
                     # "fps": 24,
                 }
                 for mp4 in video.get_video_mp4_json()
@@ -300,21 +305,27 @@ def video(request, slug):
             }
             for channel in video.channel.all()
         ],
-        # needed by peertube
+        # needed by peertube - TODO: ask for a default value?
         "sensitive": False,
-        # TODO: video.description
-        #        "mediaType": "text/markdown",
-        #        "content": null,
-        # needed by peertube
         # TODO: ask to make likes/dislikes/shares/comments optional
+        # needed by peertube
         "likes": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
+        # needed by peertube
         "dislikes": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
+        # needed by peertube
         "shares": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
+        # needed by peertube
         "comments": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
         #        "state": 1,
         #        "originallyPublishedAt": null,
         #        "support": null,
-        #        "subtitleLanguage": [],
+        #        "subtitleLanguage": [
+        #    {
+        #      "identifier": "ca",
+        #      "name": "Catalan",
+        #      "url": "https://peertube2.cpy.re/lazy-static/video-captions/...-ca.vtt"
+        #    }
+        #                ],
         #        "preview": [  # video.overview
         #            {
         #                "type": "Image",
@@ -339,14 +350,23 @@ def video(request, slug):
         #        "latencyMode": null,
         #        "peertubeLiveChat": false,
     }
+    # TODO: uncomment and debug
     # if video.licence:
     #    response["licence"] = {"identifier": video.licence, "name": video.get_licence()}
 
+    # TODO: uncomment and debug
     # if video.main_lang:
     #    response["language"] = {
     #        "identifier": video.main_lang,
     #        "name": video.get_main_lang(),
     #    }
+
+    #if video.description:
+        # peertube only supports one language : ask for several descriptions in several languages
+        # peertube only supports markdown and not text/html
+        # TODO: ask peertube for text/html support, and in the meantime use python-markdownify to convert in markdown
+    #    response["mediaType"] = "text/markdown"
+     #   response["content"] = video.description
 
     if video.thumbnail:
         # https://github.com/Chocobozzz/PeerTube/blob/8da3e2e9b8229215e3eeb030b491a80cf37f889d/server/core/helpers/custom-validators/activitypub/videos.ts#L185-L198
@@ -355,13 +375,13 @@ def video(request, slug):
                 "type": "Image",
                 "url": video.get_thumbnail_url(scheme=True),
                 # only image/jpeg is supported on peertube - TODO: open a ticket to add support for other formats
-                "mediaType": "image/jpeg",
-                #                "mediaType": video.thumbnail.file_type,
+                "mediaType": video.thumbnail.file_type,
                 # width & height ar needed - TODO: implement size calculation in pod
                 "width": 724,
                 "height": 991,
             },
         ]
+
 
     logger.warning(f"video response: {response}")
     return JsonResponse(response, status=200)
