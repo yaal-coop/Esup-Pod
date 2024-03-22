@@ -1001,7 +1001,7 @@ class Video(models.Model):
         """
         return 360 if self.is_video else 244
 
-    def get_thumbnail_url(self) -> str:
+    def get_thumbnail_url(self, scheme=False) -> str:
         """Get a thumbnail url for the video."""
         request = None
         if self.thumbnail and self.thumbnail.file_exist():
@@ -1020,6 +1020,11 @@ class Video(models.Model):
                     static(DEFAULT_THUMBNAIL),
                 ]
             )
+
+        if scheme:
+            scheme = "https" if getattr(settings, "SECURE_SSL_REDIRECT") else "http"
+            return f"{scheme}:{thumbnail_url}"
+
         return thumbnail_url
 
     @property
