@@ -35,7 +35,7 @@ def signed_payload_headers(payload, url):
     to_be_signed_str_hash = SHA256.new(bytes(to_be_signed_str_bytes))
     sig = pkcs1_15.new(private_key).sign(to_be_signed_str_hash)
 
-    public_key_url = ap_url(reverse("activitypub:instance_account")) + "#main-key"
+    public_key_url = ap_url(reverse("activitypub:account")) + "#main-key"
     sig_base64 = base64.b64encode(sig).decode()
     signature_header = f'keyId="{public_key_url}",algorithm="rsa-sha256",headers="(request-target) host date digest",signature="{sig_base64}"'
     request_headers = {

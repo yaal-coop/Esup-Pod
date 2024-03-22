@@ -48,5 +48,5 @@ AP_PT_CHANNEL_CONTEXT = (
     },
 )
 
-PEERTUBE_ACTOR_ID = "peertube"
+INSTANCE_ACTOR_ID = "pod"
 BASE_HEADERS = {"Accept": "application/activity+json, application/ld+json"}

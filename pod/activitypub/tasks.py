@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from .constants import AP_DEFAULT_CONTEXT
 from .constants import BASE_HEADERS
-from .constants import PEERTUBE_ACTOR_ID
+from .constants import INSTANCE_ACTOR_ID
 from .models import Follower
 from .models import Following
 from .utils import ap_url
@@ -21,7 +21,7 @@ def get_peertube_account_url(url):
     parsed = urlparse(url)
     # TODO: handle exceptions
     webfinger_url = (
-        f"{url}/.well-known/webfinger?resource=acct:{PEERTUBE_ACTOR_ID}@{parsed.netloc}"
+        f"{url}/.well-known/webfinger?resource=acct:{INSTANCE_ACTOR_ID}@{parsed.netloc}"
     )
     response = requests.get(webfinger_url, headers=BASE_HEADERS)
     for link in response.json()["links"]:
@@ -69,7 +69,7 @@ def send_follow_request(metadata):
         "@context": AP_DEFAULT_CONTEXT,
         "type": "Follow",
         "id": f"{following_url}/{following.id}",
-        "actor": ap_url(reverse("activitypub:instance_account")),
+        "actor": ap_url(reverse("activitypub:account")),
         "object": metadata["id"],
     }
     signature_headers = signed_payload_headers(payload, metadata["inbox"])

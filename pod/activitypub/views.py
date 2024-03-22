@@ -12,7 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .constants import AP_DEFAULT_CONTEXT
 from .constants import AP_PT_VIDEO_CONTEXT
 from .constants import AP_PT_CHANNEL_CONTEXT
-from .constants import PEERTUBE_ACTOR_ID
+from .constants import INSTANCE_ACTOR_ID
 from django.contrib.auth.models import User
 from .utils import ap_url
 from pod.video.models import Video
@@ -33,8 +33,8 @@ def nodeinfo(request):
             },
             {
                 "rel": "https://www.w3.org/ns/activitystreams#Application",
-                # "href": f"http://localhost:9000/accounts/{PEERTUBE_ACTOR_ID}",
-                "href": ap_url(reverse("activitypub:instance_account")),
+                # "href": f"http://localhost:9000/accounts/{INSTANCE_ACTOR_ID}",
+                "href": ap_url(reverse("activitypub:account")),
             },
         ]
     }
@@ -54,7 +54,7 @@ def webfinger(request):
                 {
                     "rel": "self",
                     "type": "application/activity+json",
-                    "href": ap_url(reverse("activitypub:instance_account")),
+                    "href": ap_url(reverse("activitypub:account")),
                 }
             ],
         }
@@ -63,74 +63,56 @@ def webfinger(request):
 
 
 @csrf_exempt
-def instance_account(request):
-    instance_actor_url = ap_url(reverse("activitypub:instance_account"))
+def account(request, username=None):
+    url_args = {"username": username} if username else {}
+    instance_actor_url = ap_url(reverse("activitypub:account"))
+    context = (
+        AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT] if username else AP_DEFAULT_CONTEXT
+    )
+    account_type = "Person" if username else "Application"
     response = {
-        "@context": AP_DEFAULT_CONTEXT,
-        "type": "Application",
-        "id": instance_actor_url,
-        "following": ap_url(reverse("activitypub:following")),
-        "followers": ap_url(reverse("activitypub:followers")),
-        "inbox": ap_url(reverse("activitypub:inbox")),
-        "outbox": ap_url(reverse("activitypub:outbox")),
-        "url": instance_actor_url,
-        "name": PEERTUBE_ACTOR_ID,
-        "preferredUsername": PEERTUBE_ACTOR_ID,
+        "@context": context,
+        "type": account_type,
+        "id": ap_url(reverse("activitypub:account", kwargs=url_args)),
+        "url": ap_url(reverse("activitypub:account", kwargs=url_args)),
+        "following": ap_url(reverse("activitypub:following", kwargs=url_args)),
+        "followers": ap_url(reverse("activitypub:followers", kwargs=url_args)),
+        "inbox": ap_url(reverse("activitypub:inbox", kwargs=url_args)),
+        "outbox": ap_url(reverse("activitypub:outbox", kwargs=url_args)),
         "publicKey": {
             "id": f"{instance_actor_url}#main-key",
             "owner": instance_actor_url,
             "publicKeyPem": settings.ACTIVITYPUB_PUBLIC_KEY,
         },
     }
-    logger.warning(f"instance_account response: {response}")
+
+    if username:
+        user = get_object_or_404(User, username=username)
+        response["preferredUsername"] = user.username
+        response["name"] = user.get_full_name() or user.username
+        response["summary"] = user.owner.commentaire
+
+        if user.owner.userpicture:
+            response["icon"] = [
+                {
+                    "type": "Image",
+                    "url": user.owner.userpicture.file.url,
+                    # "height": 48,
+                    # "width": 48,
+                    "mediaType": user.owner.userpicture.file_type,
+                },
+            ]
+
+    else:
+        response["name"] = INSTANCE_ACTOR_ID
+        response["preferredUsername"] = INSTANCE_ACTOR_ID
+
+    logger.warning(f"account response: {response}")
     return JsonResponse(response, status=200)
 
 
 @csrf_exempt
-def user(request, username):
-    user = get_object_or_404(User, username=username)
-    instance_actor_url = ap_url(reverse("activitypub:instance_account"))
-    response = {
-        "@context": AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT],
-        "type": "Person",
-        "id": ap_url(reverse("activitypub:user", kwargs={"username": username})),
-        "url": ap_url(reverse("activitypub:user", kwargs={"username": username})),
-        # "following": "https://tube.aquilenet.fr/accounts/eloi/following",
-        # "followers": "https://tube.aquilenet.fr/accounts/eloi/followers",
-        # "playlists": "https://tube.aquilenet.fr/accounts/eloi/playlists",
-        "inbox": ap_url(
-            reverse("activitypub:user", kwargs={"username": username}) + "/inbox"
-        ),
-        # "outbox": "https://tube.aquilenet.fr/accounts/eloi/outbox",
-        "preferredUsername": user.username,
-        "name": user.get_full_name() or user.username,
-        # "endpoints": {"sharedInbox": "https://tube.aquilenet.fr/inbox"},
-        # needed by peertube
-        "publicKey": {
-            "id": f"{instance_actor_url}#main-key",
-            "owner": instance_actor_url,
-            "publicKeyPem": settings.ACTIVITYPUB_PUBLIC_KEY,
-        },
-        # "published": "2019-09-09T12:16:39.267Z",
-        "summary": user.owner.commentaire,
-    }
-
-    if user.owner.userpicture:
-        response["icon"] = [
-            {
-                "type": "Image",
-                "url": user.owner.userpicture.file.url,
-                # "height": 48,
-                # "width": 48,
-                "mediaType": user.owner.userpicture.file_type,
-            },
-        ]
-
-    return JsonResponse(response, status=200)
-
-
-@csrf_exempt
-def inbox(request):
+def inbox(request, username=None):
     data = json.loads(request.body.decode()) if request.body else None
     logger.warning(f"inbox query: {data}")
     # TODO: reject invalid objects
@@ -138,22 +120,30 @@ def inbox(request):
     # TODO: test HTTP signature
 
     # TODO: make an async call from this
-    if data["type"] == "Follow":
+    if not username and data["type"] == "Follow":
         send_accept_request(
             follow_actor=data["actor"],
             follow_object=data["object"],
             follow_id=data["id"],
         )
 
+    else:
+        logger.warning(f"... ignoring")
+
     return HttpResponse(204)
 
 
 @csrf_exempt
-def outbox(request):
-    # list all current instance videos
-    video_query = Video.objects.filter(is_restricted=False)
-    nb_videos = video_query.count()
+def outbox(request, username=None):
+    # list all current videos
+    url_args = {"username": username} if username else {}
     page = int(request.GET.get("page", 0))
+    user = get_object_or_404(User, username=username) if username else None
+    video_query = Video.objects.filter(is_restricted=False)
+    if user:
+        video_query = video_query.filter(owner=user)
+    nb_videos = video_query.count()
+
     if page:
         first_index = (page - 1) * AP_PAGE_SIZE
         last_index = min(nb_videos, first_index + AP_PAGE_SIZE)
@@ -161,19 +151,19 @@ def outbox(request):
         next_page = page + 1 if (page + 1) * AP_PAGE_SIZE < nb_videos else None
         response = {
             "@context": AP_DEFAULT_CONTEXT,
-            "id": ap_url(reverse("activitypub:outbox")),
+            "id": ap_url(reverse("activitypub:outbox", kwargs=url_args)),
             "type": "OrderedCollection",
             "totalItems": nb_videos,
             "orderedItems": [
                 {
                     "to": ["https://www.w3.org/ns/activitystreams#Public"],
-                    "cc": [ap_url(reverse("activitypub:followers"))],
+                    "cc": [ap_url(reverse("activitypub:followers", kwargs=url_args))],
                     "type": "Announce",
                     "id": ap_url(
                         reverse("activitypub:video", kwargs={"slug": item.slug})
                     )
                     + "/announces/1",
-                    "actor": ap_url(reverse("activitypub:instance_account")),
+                    "actor": ap_url(reverse("activitypub:account", kwargs=url_args)),
                     "object": ap_url(
                         reverse("activitypub:video", kwargs={"slug": item.slug})
                     ),
@@ -183,22 +173,24 @@ def outbox(request):
         }
         if next_page:
             response["next"] = (
-                ap_url(reverse("activitypub:outbox")) + "?page=" + next_page
+                ap_url(reverse("activitypub:outbox", kwargs=url_args))
+                + "?page="
+                + next_page
             )
 
     elif nb_videos:
         response = {
             "@context": AP_DEFAULT_CONTEXT,
-            "id": ap_url(reverse("activitypub:outbox")),
+            "id": ap_url(reverse("activitypub:outbox", kwargs=url_args)),
             "type": "OrderedCollection",
             "totalItems": nb_videos,
-            "first": ap_url(reverse("activitypub:outbox")) + "?page=1",
+            "first": ap_url(reverse("activitypub:outbox", kwargs=url_args)) + "?page=1",
         }
 
     else:
         response = {
             "@context": AP_DEFAULT_CONTEXT,
-            "id": ap_url(reverse("activitypub:outbox")),
+            "id": ap_url(reverse("activitypub:outbox", kwargs=url_args)),
             "type": "OrderedCollection",
             "totalItems": 0,
         }
@@ -208,11 +200,11 @@ def outbox(request):
 
 
 @csrf_exempt
-def following(request):
-    # list all followed instances
+def following(request, username=None):
+    url_args = {"username": username} if username else {}
     response = {
         "@context": AP_DEFAULT_CONTEXT,
-        "id": ap_url(reverse("activitypub:following")),
+        "id": ap_url(reverse("activitypub:following", kwargs=url_args)),
         "type": "OrderedCollection",
         "totalItems": 0,
     }
@@ -221,11 +213,11 @@ def following(request):
 
 
 @csrf_exempt
-def followers(request):
-    # list all current instance followers
+def followers(request, username=None):
+    url_args = {"username": username} if username else {}
     response = {
         "@context": AP_DEFAULT_CONTEXT,
-        "id": ap_url(reverse("activitypub:followers")),
+        "id": ap_url(reverse("activitypub:followers", kwargs=url_args)),
         "type": "OrderedCollection",
         "totalItems": 0,
     }
@@ -290,7 +282,7 @@ def video(request, slug):
                 "type": "Person",
                 "id": ap_url(
                     reverse(
-                        "activitypub:user", kwargs={"username": video.owner.username}
+                        "activitypub:account", kwargs={"username": video.owner.username}
                     )
                 ),
             },
@@ -378,7 +370,7 @@ def video(request, slug):
 @csrf_exempt
 def channel(request, slug):
     channel = get_object_or_404(Channel, slug=slug)
-    instance_actor_url = ap_url(reverse("activitypub:instance_account"))
+    instance_actor_url = ap_url(reverse("activitypub:account"))
     # https://github.com/Chocobozzz/PeerTube/blob/8da3e2e9b8229215e3eeb030b491a80cf37f889d/server/core/helpers/custom-validators/activitypub/actor.ts#L62
     response = {
         "@context": AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT],
@@ -428,7 +420,7 @@ def channel(request, slug):
             {
                 "type": "Person",
                 "id": ap_url(
-                    reverse("activitypub:user", kwargs={"username": owner.username})
+                    reverse("activitypub:account", kwargs={"username": owner.username})
                 ),
             }
             for owner in channel.owners.all()
@@ -453,7 +445,7 @@ def likes(request, slug):
     video = get_object_or_404(Video, slug=slug)
     response = {
         "@context": AP_DEFAULT_CONTEXT,
-        "id": ap_url(reverse("activitypub:likes", kwargs={"slug": slug})),
+        "id": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
         "type": "OrderedCollection",
         "totalItems": 0,
     }
@@ -465,7 +457,7 @@ def dislikes(request, slug):
     video = get_object_or_404(Video, slug=slug)
     response = {
         "@context": AP_DEFAULT_CONTEXT,
-        "id": ap_url(reverse("activitypub:dislikes", kwargs={"slug": slug})),
+        "id": ap_url(reverse("activitypub:dislikes", kwargs={"slug": video.slug})),
         "type": "OrderedCollection",
         "totalItems": 0,
     }
@@ -477,7 +469,7 @@ def shares(request, slug):
     video = get_object_or_404(Video, slug=slug)
     response = {
         "@context": AP_DEFAULT_CONTEXT,
-        "id": ap_url(reverse("activitypub:shares", kwargs={"slug": slug})),
+        "id": ap_url(reverse("activitypub:shares", kwargs={"slug": video.slug})),
         "type": "OrderedCollection",
         "totalItems": 0,
     }
@@ -490,7 +482,7 @@ def comments(request, slug):
     # TODO: video.notecomments
     response = {
         "@context": AP_DEFAULT_CONTEXT,
-        "id": ap_url(reverse("activitypub:comments", kwargs={"slug": slug})),
+        "id": ap_url(reverse("activitypub:comments", kwargs={"slug": video.slug})),
         "type": "OrderedCollection",
         "totalItems": 0,
     }
