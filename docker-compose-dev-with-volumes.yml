@@ -8,7 +8,7 @@ version: '3.7'
 
 services:
   pod:
-    hostname: pod.local
+    hostname: pod.localhost
     container_name: pod-dev-with-volumes
     hostname: pod.localhost
     build:
@@ -21,6 +21,7 @@ services:
       - ./.env.dev
     ports:
       - 8000:8000
+      - 8080:8080
     volumes: *pod-volumes
 
   elasticsearch:
@@ -48,7 +49,7 @@ services:
 
   peertube:
     container_name: peertube
-    hostname: peertube.local
+    hostname: peertube.localhost
     image: chocobozzz/peertube:develop-bookworm
     ports:
       - 9000:9000
