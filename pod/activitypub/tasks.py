@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 import requests
 from django.urls import reverse
 
-from .constants import ACTIVITYPUB_CONTEXT
+from .constants import AP_DEFAULT_CONTEXT
 from .constants import BASE_HEADERS
 from .constants import PEERTUBE_ACTOR_ID
 from .models import Follower
@@ -42,7 +42,7 @@ def send_accept_request(follow_actor, follow_object, follow_id):
 
     follower, _ = Follower.objects.get_or_create(actor=follow_actor)
     payload = {
-        "@context": ACTIVITYPUB_CONTEXT,
+        "@context": AP_DEFAULT_CONTEXT,
         "id": ap_url(f"/accepts/follows/{follower.id}"),
         "type": "Accept",
         "actor": follow_object,
@@ -66,7 +66,7 @@ def send_follow_request(metadata):
     following, _ = Following.objects.get_or_create(object=metadata["id"])
     following_url = ap_url(reverse("activitypub:following"))
     payload = {
-        "@context": ACTIVITYPUB_CONTEXT,
+        "@context": AP_DEFAULT_CONTEXT,
         "type": "Follow",
         "id": f"{following_url}/{following.id}",
         "actor": ap_url(reverse("activitypub:instance_account")),

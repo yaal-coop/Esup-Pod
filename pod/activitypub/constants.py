@@ -1,9 +1,9 @@
-ACTIVITYPUB_CONTEXT = [
+AP_DEFAULT_CONTEXT = [
     "https://www.w3.org/ns/activitystreams",
     "https://w3id.org/security/v1",
     {"RsaSignature2017": "https://w3id.org/security#RsaSignature2017"},
 ]
-PEERTUBE_CONTEXT = {
+AP_PT_VIDEO_CONTEXT = {
     "pt": "https://joinpeertube.org/ns#",
     "sc": "http://schema.org/",
     "Hashtag": "as:Hashtag",
@@ -38,5 +38,15 @@ PEERTUBE_CONTEXT = {
     "shares": {"@id": "as:shares", "@type": "@id"},
     "comments": {"@id": "as:comments", "@type": "@id"},
 }
+AP_PT_CHANNEL_CONTEXT = (
+    {
+        "pt": "https://joinpeertube.org/ns#",
+        "sc": "http://schema.org/",
+        "playlists": {"@id": "pt:playlists", "@type": "@id"},
+        "support": {"@type": "sc:Text", "@id": "pt:support"},
+        "icons": "as:icon",
+    },
+)
+
 PEERTUBE_ACTOR_ID = "peertube"
 BASE_HEADERS = {"Accept": "application/activity+json, application/ld+json"}

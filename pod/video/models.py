@@ -1008,21 +1008,27 @@ class Video(models.Model):
         """
         return 360 if self.is_video else 244
 
-    def get_thumbnail_url(self, size="x720") -> str:
+    def get_thumbnail_url(self, size="x720", scheme=False) -> str:
         """Get a thumbnail url for the video, with defined max size."""
         request = None
         if self.thumbnail and self.thumbnail.file_exist():
             # Do not serve thumbnail url directly, as it can lead to the video URL
             im = get_thumbnail(self.thumbnail.file, size, crop="center", quality=80)
-            return im.url
+            thumbnail_url = im.url
         else:
-            return "".join(
+            thumbnail_url = "".join(
                 [
                     "//",
                     get_current_site(request).domain,
                     static(DEFAULT_THUMBNAIL),
                 ]
             )
+
+        if scheme:
+            scheme = "https" if getattr(settings, "SECURE_SSL_REDIRECT") else "http"
+            return f"{scheme}:{thumbnail_url}"
+
+        return thumbnail_url
 
     @property
     def get_thumbnail_admin(self):

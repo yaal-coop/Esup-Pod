@@ -9,11 +9,13 @@ from django.http import HttpResponse
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
-from .constants import ACTIVITYPUB_CONTEXT
-from .constants import PEERTUBE_CONTEXT
+from .constants import AP_DEFAULT_CONTEXT
+from .constants import AP_PT_VIDEO_CONTEXT
+from .constants import AP_PT_CHANNEL_CONTEXT
 from .constants import PEERTUBE_ACTOR_ID
 from .utils import ap_url
 from pod.video.models import Video
+from pod.video.models import Channel
 from .tasks import send_accept_request
 
 logger = logging.getLogger(__name__)
@@ -64,7 +66,7 @@ def instance_account(request):
     logger.warning("instance_account")
     instance_actor_url = ap_url(reverse("activitypub:instance_account"))
     instance_data = {
-        "@context": ACTIVITYPUB_CONTEXT,
+        "@context": AP_DEFAULT_CONTEXT,
         "type": "Application",
         "id": instance_actor_url,
         "following": ap_url(reverse("activitypub:following")),
@@ -116,7 +118,7 @@ def outbox(request):
         items = video_query[first_index:last_index].all()
         next_page = page + 1 if (page + 1) * AP_PAGE_SIZE < nb_videos else None
         response = {
-            "@context": ACTIVITYPUB_CONTEXT,
+            "@context": AP_DEFAULT_CONTEXT,
             "id": ap_url(reverse("activitypub:outbox")),
             "type": "OrderedCollection",
             "totalItems": nb_videos,
@@ -144,7 +146,7 @@ def outbox(request):
 
     elif nb_videos:
         response = {
-            "@context": ACTIVITYPUB_CONTEXT,
+            "@context": AP_DEFAULT_CONTEXT,
             "id": ap_url(reverse("activitypub:outbox")),
             "type": "OrderedCollection",
             "totalItems": nb_videos,
@@ -153,7 +155,7 @@ def outbox(request):
 
     else:
         response = {
-            "@context": ACTIVITYPUB_CONTEXT,
+            "@context": AP_DEFAULT_CONTEXT,
             "id": ap_url(reverse("activitypub:outbox")),
             "type": "OrderedCollection",
             "totalItems": 0,
@@ -169,7 +171,7 @@ def following(request):
     logger.warning(f"following query: {data}")
     # list all followed instances
     response = {
-        "@context": ACTIVITYPUB_CONTEXT,
+        "@context": AP_DEFAULT_CONTEXT,
         "id": ap_url(reverse("activitypub:following")),
         "type": "OrderedCollection",
         "totalItems": 0,
@@ -184,7 +186,7 @@ def followers(request):
     logger.warning(f"followers data: {data}")
     # list all current instance followers
     response = {
-        "@context": ACTIVITYPUB_CONTEXT,
+        "@context": AP_DEFAULT_CONTEXT,
         "id": ap_url(reverse("activitypub:followers")),
         "type": "OrderedCollection",
         "totalItems": 0,
@@ -199,7 +201,7 @@ def video(request, slug):
     logger.warning(f"video data: {data}")
     video = get_object_or_404(Video, slug=slug)
     response = {
-        "@context": ACTIVITYPUB_CONTEXT + [PEERTUBE_CONTEXT],
+        "@context": AP_DEFAULT_CONTEXT + [AP_PT_VIDEO_CONTEXT],
         "id": ap_url(reverse("activitypub:video", kwargs={"slug": slug})),
         "to": ["https://www.w3.org/ns/activitystreams#Public"],
         "cc": ["https://tube.aquilenet.fr/accounts/user/followers"],
@@ -208,31 +210,72 @@ def video(request, slug):
         # duration must fit the xsd:duration format
         # https://www.w3.org/TR/xmlschema11-2/#duration
         "duration": f"PT{video.duration}S",
+        # TODO: uuid is needed
         "uuid": "aad71797-78b9-4b5a-a3d6-f93fae80b7e7",
-        "category": {"identifier": "11", "name": "News & Politics"},  # video.type
+        # TODO
+        # "category": {"identifier": "11", "name": "News & Politics & shit"},  # video.type
+        # needed by peertube
         "views": video.viewcount,
-        #        "sensitive": false,
         "waitTranscoding": video.encoding_in_progress,
-        #        "state": 1,
         "commentsEnabled": not video.disable_comment,
         "downloadEnabled": video.allow_downloading,
-        "published": video.date_added.isoformat(),  # "2024-03-19T08:46:49.185Z",
-        #        "originallyPublishedAt": null,
-        #        "updated": "2024-03-19T08:46:49.185Z",
+        # TODO: peertube dates ends with Z
+        # "2024-03-19T08:46:49.185Z"
+        # needed by peertube
+        "published": video.date_added.isoformat(),
+        # needed by peertube
+        "updated": video.date_added.isoformat(),
+        # TODO
         "tag": [],  # video.type
+        "url": (
+            [
+                {
+                    "type": "Link",
+                    "mediaType": "text/html",
+                    "href": ap_url(reverse("video:video", args=(video.slug,))),
+                },
+            ]
+            + [
+                {
+                    "type": "Link",
+                    "mediaType": "video/mp4",
+                    "href": ap_url(mp4["src"]),
+                    "height": mp4["height"],
+                    # size and fps are not available
+                    # "size": 16555783,
+                    # "fps": 24,
+                }
+                for mp4 in video.get_video_mp4_json()
+            ]
+        ),
+        "attributedTo": [
+            # TODO: video.owner
+            # needed by peertube
+            {
+                "type": "Person",
+                "id": ap_url(reverse("activitypub:instance_account")),
+            },
+            ] + [
+            # needed by peertube
+            # TODO: ask peertube to make this optional
+            # currently an error "Cannot find associated video channel to video" is raised
+            {
+                "type": "Group",
+                "id": ap_url(
+                    reverse("activitypub:channel", kwargs={"slug": channel.slug})
+                ),
+            }
+            for channel in video.channel.all()
+        ],
+        # needed by peertube
+        "sensitive": False,
+        # TODO: video.description
         #        "mediaType": "text/markdown",
         #        "content": null,
+        #        "state": 1,
+        #        "originallyPublishedAt": null,
         #        "support": null,
         #        "subtitleLanguage": [],
-        #        "icon": [
-        #            {
-        #                "type": "Image",
-        #                "url": "https://tube.aquilenet.fr/lazy-static/thumbnails/0d18ad55-f86d-4548-957c-fa0f26e3443b.jpg",
-        #                "mediaType": "image/jpeg",
-        #                "width": 280,
-        #                "height": 157,
-        #            },
-        #        ],
         #        "preview": [  # video.overview
         #            {
         #                "type": "Image",
@@ -250,54 +293,102 @@ def video(request, slug):
         #                ],
         #            }
         #        ],
-        "url": (
-            [
-                {
-                    "type": "Link",
-                    "mediaType": "text/html",
-                    "href": reverse("video:video", args=(video.slug,)),
-                },
-            ]
-            + [
-                {
-                    "type": "Link",
-                    "mediaType": "video/mp4",
-                    "href": ap_url(mp4["src"]),
-                    "height": mp4["height"],
-                    #                "size": 16555783,
-                    #                "fps": 24,
-                }
-                for mp4 in video.get_video_mp4_json()
-            ]
-        ),
         #        "likes": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/likes",
         #        "dislikes": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/dislikes",
         #        "shares": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/announces",
         #        "comments": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/comments",  # notecomments
         #        "hasParts": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/chapters",
-        "attributedTo": [
-            {
-                "type": "Person",
-                "id": ap_url(reverse("activitypub:instance_account")),  # video.owner
-            },
-            #            {
-            #                "type": "Group",
-            #                "id": "https://tube.aquilenet.fr/video-channels/channel",  # video.channel
-            #            },
-        ],
         #        "isLiveBroadcast": false,
         #        "liveSaveReplay": null,
         #        "permanentLive": null,
         #        "latencyMode": null,
         #        "peertubeLiveChat": false,
     }
-    if video.licence:
-        response["licence"] = {"identifier": video.licence, "name": video.get_licence()}
+    # if video.licence:
+    #    response["licence"] = {"identifier": video.licence, "name": video.get_licence()}
 
-    if video.main_lang:
-        response["language"] = {
-            "identifier": video.main_lang,
-            "name": video.get_main_lang(),
+    # if video.main_lang:
+    #    response["language"] = {
+    #        "identifier": video.main_lang,
+    #        "name": video.get_main_lang(),
+    #    }
+
+    if video.thumbnail:
+        # https://github.com/Chocobozzz/PeerTube/blob/8da3e2e9b8229215e3eeb030b491a80cf37f889d/server/core/helpers/custom-validators/activitypub/videos.ts#L185-L198
+        response["icon"] = [
+            {
+                "type": "Image",
+                "url": video.get_thumbnail_url(scheme=True),
+                # only image/jpeg is supported on peertube - TODO: open a ticket to add support for other formats
+                "mediaType": "image/jpeg",
+                #                "mediaType": video.thumbnail.file_type,
+                # width & height ar needed - TODO: implement size calculation in pod
+                "width": 724,
+                "height": 991,
+            },
+        ]
+
+    logger.warning(f"video response: {response}")
+    return JsonResponse(response, status=200)
+
+
+@csrf_exempt
+def channel(request, slug):
+    data = json.loads(request.body.decode()) if request.body else None
+    logger.warning(f"video data: {data}")
+    channel = get_object_or_404(Channel, slug=slug)
+    response = {
+        "@context": AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT],
+        "type": "Group",
+        "id": ap_url(reverse("activitypub:channel", kwargs={"slug": slug})),
+        # "following": "https://tube.aquilenet.fr/video-channels/USER_channel/following",
+        # "followers": "https://tube.aquilenet.fr/video-channels/USER_channel/followers",
+        # "playlists": "https://tube.aquilenet.fr/video-channels/USER_channel/playlists",
+        # "inbox": "https://tube.aquilenet.fr/video-channels/USER_channel/inbox",
+        # "outbox": "https://tube.aquilenet.fr/video-channels/USER_channel/outbox",
+        "preferredUsername": channel.title,
+        "url": ap_url(reverse("activitypub:channel", kwargs={"slug": slug})),
+        "name": channel.title,
+        # "endpoints": {"sharedInbox": "https://tube.aquilenet.fr/inbox"},
+        # "publicKey": {
+        #    "id": "https://tube.aquilenet.fr/video-channels/USER_channel#main-key",
+        #    "owner": "https://tube.aquilenet.fr/video-channels/USER_channel",
+        #    "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3yvqok7x+4LvbA0y+yJo\nJ+yrAjoEshcJiis+1TDrsxuVRfxCpBnzurWsPAGg1VH3T1W6kNhThaVXpn/zXm4E\nfS5U7yqM0ME4qcmcLy69MoAtrJPZQHfIBK31Q1rEnFrqo7dSLXOaaajPfo8d+H9t\n0ixW6WhObLZZ8fMTXSa2xcLz2Dnzu5XIFk7tzh5+0ya9G1HuBmPbCmmp1PKrvFpt\nSX5YBgECLRAVLiyfnzrfsLbO+IAHOt+pCZvUovnlILiAAeSUY8dkLsGo8gONLPx+\nxBYQvm6pjpnqLRQltYQruEydzUnGO8A6Fwm+JGfFu0uQhH0LvKSJG1vMTx18JhUd\naQIDAQAB\n-----END PUBLIC KEY-----",
+        # },
+        # "published": "2020-11-29T21:53:21.363Z",
+        # "icon": [
+        #    {
+        #        "type": "Image",
+        #        "mediaType": "image/png",
+        #        "height": 48,
+        #        "width": 48,
+        #        "url": "https://tube.aquilenet.fr/lazy-static/avatars/e904f75e-917b-41da-97b6-0ec5d8d59990.png",
+        #    },
+        #    {
+        #        "type": "Image",
+        #        "mediaType": "image/png",
+        #        "height": 120,
+        #        "width": 120,
+        #        "url": "https://tube.aquilenet.fr/lazy-static/avatars/e54d9c61-7c69-4ea9-9e22-0cd8b6847caf.png",
+        #    },
+        # ],
+        "summary": channel.description,
+        "support": None,
+        "attributedTo": [
+            {
+                "type": "Person",
+                "id": ap_url(reverse("activitypub:instance_account")),
+            }
+        ],
+    }
+
+    if channel.headband:
+        response["image"] = {
+            "type": "Image",
+            "mediaType": channel.headband.file.url,
+            # "height": 317,
+            # "width": 1920,
+            "url": channel.headband.file_type,
         }
 
     logger.warning(f"video response: {response}")
