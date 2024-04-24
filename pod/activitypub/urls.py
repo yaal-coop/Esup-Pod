@@ -23,5 +23,6 @@ urlpatterns = [
     path("ap/video/<slug:slug>/dislikes", views.dislikes, name="dislikes"),
     path("ap/video/<slug:slug>/shares", views.shares, name="comments"),
     path("ap/video/<slug:slug>/comments", views.comments, name="shares"),
+    path("ap/video/<slug:slug>/chapters", views.chapters, name="chapters"),
     path("ap/channel/<slug:slug>", views.channel, name="channel"),
 ]
