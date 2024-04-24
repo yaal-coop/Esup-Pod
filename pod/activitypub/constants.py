@@ -47,6 +47,14 @@ AP_PT_CHANNEL_CONTEXT = (
         "icons": "as:icon",
     },
 )
+AP_PT_CHAPTERS_CONTEXT = {
+    "pt": "https://joinpeertube.org/ns#",
+    "sc": "http://schema.org/",
+    "name": "sc:name",
+    "hasPart": "sc:hasPart",
+    "endOffset": "sc:endOffset",
+    "startOffset": "sc:startOffset",
+}
 
 INSTANCE_ACTOR_ID = "pod"
 BASE_HEADERS = {"Accept": "application/activity+json, application/ld+json"}
