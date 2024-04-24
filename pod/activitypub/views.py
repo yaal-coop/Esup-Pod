@@ -9,9 +9,11 @@ from django.shortcuts import get_object_or_404
 from django.template.defaultfilters import slugify
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
+from markdownify import markdownify
 
 from .constants import AP_DEFAULT_CONTEXT
 from .constants import AP_PT_CHANNEL_CONTEXT
+from .constants import AP_PT_CHAPTERS_CONTEXT
 from .constants import AP_PT_VIDEO_CONTEXT
 from .constants import INSTANCE_ACTOR_ID
 from .tasks import send_accept_request
@@ -23,6 +25,17 @@ from pod.video.models import Video
 logger = logging.getLogger(__name__)
 
 AP_PAGE_SIZE = 25
+
+# https://creativecommons.org/licenses/?lang=en
+AP_LICENSE_MAPPING = {
+    1: "by",
+    2: "by-sa",
+    3: "by-nd",
+    4: "by-nc",
+    5: "by-nc-sa",
+    6: "by-nc-nd",
+    7: "zero",
+}
 
 
 def nodeinfo(request):
@@ -243,7 +256,11 @@ def video(request, slug):
         # TODO: needed by peertube in version 4 exactly - ask peertube why is it for
         "uuid": stable_uuid(video.id, 4),
         # TODO
-        # "category": {"identifier": "11", "name": "News & Politics & shit"},  # video.type
+        # we could use video.type here,
+        # but peertube categories are fixed, and identifiers are expected to be integers
+        # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/initializers/constants.ts#L544-L563
+        # example of expected content:
+        #   "category": {"identifier": "11", "name": "News & Politics & shit"}
         # needed by peertube
         "views": video.viewcount,
         "waitTranscoding": video.encoding_in_progress,
@@ -257,7 +274,7 @@ def video(request, slug):
         # ask for tags to be optional (it is OK when it is empty)
         # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L148-L157
         "tag": [
-#            {"type": "Hashtag", "name": slugify(tag)} for tag in video.tags.split(" ")
+            {"type": "Hashtag", "name": slugify(tag)} for tag in video.tags.split(" ")
         ],
         "url": (
             [
@@ -276,7 +293,7 @@ def video(request, slug):
                     "href": ap_url(mp4["src"]),
                     "height": mp4["height"],
                     # TODO: uncomment and check
-#                    "size": mp4["size"],
+                    #                    "size": mp4["size"],
                     # fps is not available - TODO: check if it is really needed by peertube
                     # "fps": 24,
                 }
@@ -320,7 +337,6 @@ def video(request, slug):
         # needed by peertube
         "comments": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
         #        "state": 1,
-        #        "originallyPublishedAt": null,
         #        "support": null,
         #        "subtitleLanguage": [
         #    {
@@ -346,30 +362,43 @@ def video(request, slug):
         #                ],
         #            }
         #        ],
-        #        "hasParts": "https://tube.aquilenet.fr/videos/watch/aad71797-78b9-4b5a-a3d6-f93fae80b7e7/chapters",
-        #        "isLiveBroadcast": false,
-        #        "liveSaveReplay": null,
-        #        "permanentLive": null,
-        #        "latencyMode": null,
-        #        "peertubeLiveChat": false,
     }
-    # TODO: uncomment and debug
-    # if video.licence:
-    #    response["licence"] = {"identifier": video.licence, "name": video.get_licence()}
 
-    # TODO: uncomment and debug
-    # if video.main_lang:
-    #    response["language"] = {
-    #        "identifier": video.main_lang,
-    #        "name": video.get_main_lang(),
-    #    }
+    has_chapters = video.chapter_set.all().count() > 0
+    if has_chapters:
+        response["hasParts"] = ap_url(
+            reverse("activitypub:chapters", kwargs={"slug": slug})
+        )
 
-    #if video.description:
-        # peertube only supports one language : ask for several descriptions in several languages
+    # We don't support live at the moment, so the following optional fields are ignored
+    # isLiveBroadcast, liveSaveReplay, permanentLive, latencyMode, peertubeLiveChat
+
+    # TODO: implement "originallyPublishedAt" when federation is implemented on pod side
+
+    reverse_license_mapping = {v: k for k, v in AP_LICENSE_MAPPING.items()}
+    if video.licence and video.licence in reverse_license_mapping:
+        response["licence"] = {
+            # peertube needs integers identifiers
+            # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L78
+            # TODO: ask why not identifiers like 'by-nd'
+            "identifier": str(reverse_license_mapping[video.licence]),
+            "name": video.get_licence(),
+        }
+
+    if video.main_lang:
+        response["language"] = {
+            "identifier": video.main_lang,
+            "name": video.get_main_lang(),
+        }
+
+    if video.description:
+        # peertube only supports one languages
+        # TODO ask for several descriptions in several languages
         # peertube only supports markdown and not text/html
+        # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L182
         # TODO: ask peertube for text/html support, and in the meantime use python-markdownify to convert in markdown
-    #    response["mediaType"] = "text/markdown"
-     #   response["content"] = video.description
+        response["mediaType"] = "text/markdown"
+        response["content"] = markdownify(video.description)
 
     if video.thumbnail:
         # https://github.com/Chocobozzz/PeerTube/blob/8da3e2e9b8229215e3eeb030b491a80cf37f889d/server/core/helpers/custom-validators/activitypub/videos.ts#L185-L198
@@ -378,14 +407,16 @@ def video(request, slug):
                 "type": "Image",
                 "url": video.get_thumbnail_url(scheme=True),
                 # only image/jpeg is supported on peertube
+                # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L192
                 # TODO: open a ticket to add support for other formats
                 "mediaType": video.thumbnail.file_type,
-                # width & height ar needed - TODO: implement size calculation in pod
+                # width & height ar needed by peertube
+                # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L193-L194
+                # TODO: implement size calculation in pod
                 "width": 724,
                 "height": 991,
             },
         ]
-
 
     logger.warning(f"video response: {response}")
     return JsonResponse(response, status=200)
@@ -512,5 +543,20 @@ def comments(request, slug):
         "id": ap_url(reverse("activitypub:comments", kwargs={"slug": video.slug})),
         "type": "OrderedCollection",
         "totalItems": 0,
+    }
+    return JsonResponse(response, status=200)
+
+
+@csrf_exempt
+def chapters(request, slug):
+    video = get_object_or_404(Video, slug=slug)
+    # TODO: video.chapters
+    response = {
+        "@context": AP_DEFAULT_CONTEXT + [AP_PT_CHAPTERS_CONTEXT],
+        "id": ap_url(reverse("activitypub:comments", kwargs={"slug": video.slug})),
+        "hasPart": [
+            {"name": chapter.title, "startOffset": chapter.time_start, "endOffset": chapter.time_stop}
+            for chapter in video.chapter_set.all()
+        ],
     }
     return JsonResponse(response, status=200)
