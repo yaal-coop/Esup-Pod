@@ -96,7 +96,7 @@ def stable_uuid(seed, version=None):
 
 
 def make_magnet_url(video, mp4):
-    uuid = stable_uuid(video.id, version=4)
+    uuid = stable_uuid(video.title, version=4)
     fake_hash = "".join(
         random.choice("0123456789abcdefghijklmnopqrstuvwxyz") for _ in range(40)
     )
@@ -108,11 +108,11 @@ def make_magnet_url(video, mp4):
         ],
         "ws": [
             make_url(
-                url=f"/static/streaming-playlists/hls/{uuid}-{mp4['height']}-fragmented.mp4"
+                url=f"/static/streaming-playlists/hls/{uuid}-{mp4.height}-fragmented.mp4"
             )
         ],
         "xs": [
-            make_url(url=f"/lazy-static/torrents/{uuid}-{mp4['height']}-hls.torrent")
+            make_url(url=f"/lazy-static/torrents/{uuid}-{mp4.height}-hls.torrent")
         ],
         "xt": [f"urn:btih:{fake_hash}"],
     }
