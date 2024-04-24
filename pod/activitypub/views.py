@@ -254,9 +254,9 @@ def video(request, slug):
         # https://www.w3.org/TR/xmlschema11-2/#duration
         "duration": f"PT{video.duration}S",
         # TODO: needed by peertube in version 4 exactly - ask peertube why is it for
-        "uuid": stable_uuid(video.id, 4),
+        "uuid": stable_uuid(video.title, 4),
         # TODO
-        # we could use video.type here,
+        # we could use video.type as AP category
         # but peertube categories are fixed, and identifiers are expected to be integers
         # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/initializers/constants.ts#L544-L563
         # example of expected content:
@@ -270,8 +270,8 @@ def video(request, slug):
         "published": video.date_added.isoformat(),
         # needed by peertube
         "updated": video.date_added.isoformat(),
-        # TODO:
-        # ask for tags to be optional (it is OK when it is empty)
+        # tags (enven empty) are needed by peertube
+        # TODO: ask for tags to be optional
         # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L148-L157
         "tag": [
             {"type": "Hashtag", "name": slugify(tag)} for tag in video.tags.split(" ")
@@ -338,13 +338,6 @@ def video(request, slug):
         "comments": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
         #        "state": 1,
         #        "support": null,
-        #        "subtitleLanguage": [
-        #    {
-        #      "identifier": "ca",
-        #      "name": "Catalan",
-        #      "url": "https://peertube2.cpy.re/lazy-static/video-captions/...-ca.vtt"
-        #    }
-        #                ],
         #        "preview": [  # video.overview
         #            {
         #                "type": "Image",
@@ -363,6 +356,17 @@ def video(request, slug):
         #            }
         #        ],
     }
+
+    has_tracks = video.track_set.all().count() > 0
+    if has_tracks:
+        response["subtitleLanguage"] = [
+            {
+                "identifier": track.lang,
+                "name": track.get_label_lang(),
+                "url": ap_url(track.src.file.url),
+            }
+            for track in video.track_set.all()
+        ]
 
     has_chapters = video.chapter_set.all().count() > 0
     if has_chapters:
@@ -555,7 +559,11 @@ def chapters(request, slug):
         "@context": AP_DEFAULT_CONTEXT + [AP_PT_CHAPTERS_CONTEXT],
         "id": ap_url(reverse("activitypub:comments", kwargs={"slug": video.slug})),
         "hasPart": [
-            {"name": chapter.title, "startOffset": chapter.time_start, "endOffset": chapter.time_stop}
+            {
+                "name": chapter.title,
+                "startOffset": chapter.time_start,
+                "endOffset": chapter.time_stop,
+            }
             for chapter in video.chapter_set.all()
         ],
     }
