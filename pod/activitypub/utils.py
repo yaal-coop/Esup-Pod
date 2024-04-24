@@ -58,9 +58,9 @@ def signed_payload_headers(payload, url):
     return request_headers
 
 
-def stable_uuid(seed):
+def stable_uuid(seed, version=None):
     """Always returns the same UUID given the same input string."""
     full_seed = str(seed) + settings.SECRET_KEY
     m = hashlib.md5()
     m.update(full_seed.encode("utf-8"))
-    return uuid.UUID(m.hexdigest())
+    return uuid.UUID(m.hexdigest(), version=version)
