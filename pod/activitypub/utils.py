@@ -2,8 +2,10 @@ import base64
 import email.utils
 import hashlib
 import json
+import random
 import uuid
-from urllib.parse import urlparse
+from collections import namedtuple
+from urllib.parse import urlencode, urlparse, urlunparse
 
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
@@ -12,12 +14,39 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 from django.urls import reverse
 
+URLComponents = namedtuple(
+    typename="URLComponents",
+    field_names=["scheme", "netloc", "url", "path", "query", "fragment"],
+)
+
+
+def make_url(scheme=None, netloc=None, params=None, path="", url="", fragment=""):
+    if scheme is None:
+        scheme = "https" if getattr(settings, "SECURE_SSL_REDIRECT") else "http"
+
+    if netloc is None:
+        current_site = Site.objects.get_current()
+        netloc = current_site.domain
+
+    if params is not None:
+        tuples = [(key, value) for key, values in params.items() for value in values]
+        params = urlencode(tuples, safe=":")
+
+    return urlunparse(
+        URLComponents(
+            scheme=scheme,
+            netloc=netloc,
+            query=params or {},
+            url=url,
+            path=path,
+            fragment=fragment,
+        )
+    )
+
 
 def ap_url(suffix=""):
     """Returns a full URL to be used in activitypub context."""
-    scheme = "https" if getattr(settings, "SECURE_SSL_REDIRECT") else "http"
-    current_site = Site.objects.get_current()
-    return f"{scheme}://{current_site.domain}{suffix}"
+    return make_url(url=suffix)
 
 
 def signed_payload_headers(payload, url):
@@ -64,3 +93,31 @@ def stable_uuid(seed, version=None):
     m = hashlib.md5()
     m.update(full_seed.encode("utf-8"))
     return uuid.UUID(m.hexdigest(), version=version)
+
+
+def make_magnet_url(video, mp4):
+    uuid = stable_uuid(video.id, version=4)
+    fake_hash = "".join(
+        random.choice("0123456789abcdefghijklmnopqrstuvwxyz") for _ in range(40)
+    )
+    payload = {
+        "dn": [video.slug],
+        "tr": [
+            make_url(url="/tracker/announce"),
+            make_url(scheme="ws", url="/tracker/announce"),
+        ],
+        "ws": [
+            make_url(
+                url=f"/static/streaming-playlists/hls/{uuid}-{mp4['height']}-fragmented.mp4"
+            )
+        ],
+        "xs": [
+            make_url(url=f"/lazy-static/torrents/{uuid}-{mp4['height']}-hls.torrent")
+        ],
+        "xt": [f"urn:btih:{fake_hash}"],
+    }
+    return make_url(
+        scheme="magnet",
+        netloc="",
+        params=payload,
+    )
