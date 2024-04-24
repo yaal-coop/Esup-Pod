@@ -3,39 +3,30 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.http import HttpResponse
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.defaultfilters import slugify
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from markdownify import markdownify
 
-from .constants import AP_DEFAULT_CONTEXT
-from .constants import AP_PT_CHANNEL_CONTEXT
-from .constants import AP_PT_CHAPTERS_CONTEXT
-from .constants import AP_PT_VIDEO_CONTEXT
-from .constants import INSTANCE_ACTOR_ID
+from pod.video.models import Channel, Video
+
+from .constants import (
+    AP_DEFAULT_CONTEXT,
+    AP_LICENSE_MAPPING,
+    AP_PT_CHANNEL_CONTEXT,
+    AP_PT_CHAPTERS_CONTEXT,
+    AP_PT_VIDEO_CONTEXT,
+    INSTANCE_ACTOR_ID,
+)
 from .tasks import send_accept_request
-from .utils import ap_url
-from .utils import stable_uuid
-from pod.video.models import Channel
-from pod.video.models import Video
+from .utils import ap_url, make_magnet_url, stable_uuid
 
 logger = logging.getLogger(__name__)
 
-AP_PAGE_SIZE = 25
 
-# https://creativecommons.org/licenses/?lang=en
-AP_LICENSE_MAPPING = {
-    1: "by",
-    2: "by-sa",
-    3: "by-nd",
-    4: "by-nc",
-    5: "by-nc-sa",
-    6: "by-nc-nd",
-    7: "zero",
-}
+AP_PAGE_SIZE = 25
 
 
 def nodeinfo(request):
@@ -142,7 +133,7 @@ def inbox(request, username=None):
         )
 
     else:
-        logger.warning(f"... ignoring")
+        logger.warning("... ignoring")
 
     return HttpResponse(204)
 
@@ -253,14 +244,9 @@ def video(request, slug):
         # duration must fit the xsd:duration format
         # https://www.w3.org/TR/xmlschema11-2/#duration
         "duration": f"PT{video.duration}S",
-        # TODO: needed by peertube in version 4 exactly - ask peertube why is it for
-        "uuid": stable_uuid(video.title, 4),
-        # TODO
-        # we could use video.type as AP category
-        # but peertube categories are fixed, and identifiers are expected to be integers
-        # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/initializers/constants.ts#L544-L563
-        # example of expected content:
-        #   "category": {"identifier": "11", "name": "News & Politics & shit"}
+        # needed by peertube in version 4 exactly
+        # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L76
+        "uuid": stable_uuid(video.title, version=4),
         # needed by peertube
         "views": video.viewcount,
         "waitTranscoding": video.encoding_in_progress,
@@ -270,7 +256,7 @@ def video(request, slug):
         "published": video.date_added.isoformat(),
         # needed by peertube
         "updated": video.date_added.isoformat(),
-        # tags (enven empty) are needed by peertube
+        # tags (even empty) are needed by peertube
         # TODO: ask for tags to be optional
         # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L148-L157
         "tag": [
@@ -292,12 +278,29 @@ def video(request, slug):
                     "mediaType": mp4["type"],
                     "href": ap_url(mp4["src"]),
                     "height": mp4["height"],
-                    # TODO: uncomment and check
-                    #                    "size": mp4["size"],
-                    # fps is not available - TODO: check if it is really needed by peertube
-                    # "fps": 24,
+                    # TODO: get the width
+                    "width": 640,
+                    "size": mp4["size"],
+                    # TODO: get the fps
+                    "fps": 30,
                 }
                 for mp4 in video.get_video_mp4_json()
+            ]
+            + [
+                {
+                    "type": "Link",
+                    "mediaType": "application/x-bittorrent;x-scheme-handler/magnet",
+                    "href": make_magnet_url(video, mp4),
+                    "height": mp4["height"],
+                    # TODO: get the width
+                    "width": 640,
+                    # TODO: get the fps
+                    "fps": 30,
+                }
+                for mp4 in video.get_video_mp4_json()
+                # peertube needs a matching magnet url
+                # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/lib/activitypub/videos/shared/object-to-model-attributes.ts#L61-L64
+                # TODO: ask for it to be optional
             ]
         ),
         "attributedTo": [
@@ -336,26 +339,25 @@ def video(request, slug):
         "shares": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
         # needed by peertube
         "comments": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
-        #        "state": 1,
-        #        "support": null,
-        #        "preview": [  # video.overview
-        #            {
-        #                "type": "Image",
-        #                "rel": ["storyboard"],
-        #                "url": [
-        #                    {
-        #                        "mediaType": "image/jpeg",
-        #                        "href": "https://tube.aquilenet.fr/lazy-static/storyboards/4e2b2c7e-d3aa-4de4-b264-ce9d258419e5.jpg",
-        #                        "width": 1920,
-        #                        "height": 1080,
-        #                        "tileWidth": 192,
-        #                        "tileHeight": 108,
-        #                        "tileDuration": "PT1S",
-        #                    }
-        #                ],
-        #            }
-        #        ],
     }
+    # we could use video.type as AP 'category'
+    # but peertube categories are fixed, and identifiers are expected to be integers
+    # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/initializers/constants.ts#L544-L563
+    # example of expected content:
+    #   "category": {"identifier": "11", "name": "News & Politics & shit"}
+
+    # 'state' is optional
+    # peertube valid values are
+    # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/packages/models/src/videos/video-state.enum.ts#L1-L12C36
+
+    # 'support' is not managed by pod
+
+    # 'preview' thumbnails are not supported by pod
+
+    # We don't support live at the moment, so the following optional fields are ignored
+    # isLiveBroadcast, liveSaveReplay, permanentLive, latencyMode, peertubeLiveChat
+
+    # TODO: implement "originallyPublishedAt" when federation is implemented on pod side
 
     has_tracks = video.track_set.all().count() > 0
     if has_tracks:
@@ -373,11 +375,6 @@ def video(request, slug):
         response["hasParts"] = ap_url(
             reverse("activitypub:chapters", kwargs={"slug": slug})
         )
-
-    # We don't support live at the moment, so the following optional fields are ignored
-    # isLiveBroadcast, liveSaveReplay, permanentLive, latencyMode, peertubeLiveChat
-
-    # TODO: implement "originallyPublishedAt" when federation is implemented on pod side
 
     reverse_license_mapping = {v: k for k, v in AP_LICENSE_MAPPING.items()}
     if video.licence and video.licence in reverse_license_mapping:

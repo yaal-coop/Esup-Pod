@@ -58,3 +58,15 @@ AP_PT_CHAPTERS_CONTEXT = {
 
 INSTANCE_ACTOR_ID = "pod"
 BASE_HEADERS = {"Accept": "application/activity+json, application/ld+json"}
+
+
+# https://creativecommons.org/licenses/?lang=en
+AP_LICENSE_MAPPING = {
+    1: "by",
+    2: "by-sa",
+    3: "by-nd",
+    4: "by-nc",
+    5: "by-nc-sa",
+    6: "by-nc-nd",
+    7: "zero",
+}
