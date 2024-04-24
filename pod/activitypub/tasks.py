@@ -4,15 +4,11 @@ from urllib.parse import urlparse
 import requests
 from django.urls import reverse
 
-from .constants import AP_DEFAULT_CONTEXT
-from .constants import BASE_HEADERS
-from .constants import INSTANCE_ACTOR_ID
-from .models import Follower
-from .models import Following
-from .utils import ap_url
-from .utils import signed_payload_headers
 from pod.main.celery import app
 
+from .constants import AP_DEFAULT_CONTEXT, BASE_HEADERS, INSTANCE_ACTOR_ID
+from .models import Follower, Following
+from .utils import ap_url, signed_payload_headers
 
 logger = logging.getLogger(__name__)
 
