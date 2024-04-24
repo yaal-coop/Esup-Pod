@@ -275,29 +275,27 @@ def video(request, slug):
                 {
                     # MP4 link
                     "type": "Link",
-                    "mediaType": mp4["type"],
-                    "href": ap_url(mp4["src"]),
-                    "height": mp4["height"],
-                    # TODO: get the width
-                    "width": 640,
-                    "size": mp4["size"],
+                    "mediaType": mp4.encoding_format,
+                    "href": ap_url(mp4.source_file.url),
+                    "height": mp4.height,
+                    "width": mp4.width,
+                    "size": mp4.source_file.size,
                     # TODO: get the fps
-                    "fps": 30,
+                    #"fps": 30,
                 }
-                for mp4 in video.get_video_mp4_json()
+                for mp4 in video.get_video_mp4()
             ]
             + [
                 {
                     "type": "Link",
                     "mediaType": "application/x-bittorrent;x-scheme-handler/magnet",
                     "href": make_magnet_url(video, mp4),
-                    "height": mp4["height"],
-                    # TODO: get the width
-                    "width": 640,
+                    "height": mp4.height,
+                    "width": mp4.width,
                     # TODO: get the fps
-                    "fps": 30,
+                    #"fps": 30,
                 }
-                for mp4 in video.get_video_mp4_json()
+                for mp4 in video.get_video_mp4()
                 # peertube needs a matching magnet url
                 # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/lib/activitypub/videos/shared/object-to-model-attributes.ts#L61-L64
                 # TODO: ask for it to be optional
@@ -328,7 +326,8 @@ def video(request, slug):
             }
             for channel in video.channel.all()
         ],
-        # needed by peertube - TODO: ask for a default value?
+        # needed by peertube
+        # TODO: ask for it to be optional
         "sensitive": False,
         # TODO: ask to make likes/dislikes/shares/comments optional
         # needed by peertube
@@ -395,9 +394,10 @@ def video(request, slug):
     if video.description:
         # peertube only supports one languages
         # TODO ask for several descriptions in several languages
+
         # peertube only supports markdown and not text/html
         # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L182
-        # TODO: ask peertube for text/html support, and in the meantime use python-markdownify to convert in markdown
+        # TODO: ask peertube for text/html support
         response["mediaType"] = "text/markdown"
         response["content"] = markdownify(video.description)
 
@@ -412,10 +412,8 @@ def video(request, slug):
                 # TODO: open a ticket to add support for other formats
                 "mediaType": video.thumbnail.file_type,
                 # width & height ar needed by peertube
-                # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L193-L194
-                # TODO: implement size calculation in pod
-                "width": 724,
-                "height": 991,
+                "width": video.thumbnail.file.width,
+                "height": video.thumbnail.file.height,
             },
         ]
 
