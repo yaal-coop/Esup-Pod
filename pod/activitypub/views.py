@@ -240,8 +240,8 @@ def video(request, slug):
         # duration must fit the xsd:duration format
         # https://www.w3.org/TR/xmlschema11-2/#duration
         "duration": f"PT{video.duration}S",
-        # TODO: needed by peertube - ask peertube why is it for
-        "uuid": stable_uuid(video.id),
+        # TODO: needed by peertube in version 4 exactly - ask peertube why is it for
+        "uuid": stable_uuid(video.id, 4),
         # TODO
         # "category": {"identifier": "11", "name": "News & Politics & shit"},  # video.type
         # needed by peertube
@@ -253,8 +253,10 @@ def video(request, slug):
         "published": video.date_added.isoformat(),
         # needed by peertube
         "updated": video.date_added.isoformat(),
+        # TODO:
+        # ask for tags to be optional (it is OK when it is empty)
+        # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L148-L157
         "tag": [
-# TODO: uncomment and check
 #            {"type": "Hashtag", "name": slugify(tag)} for tag in video.tags.split(" ")
         ],
         "url": (
@@ -295,6 +297,7 @@ def video(request, slug):
         + [
             # needed by peertube
             # TODO: ask peertube to make this optional
+            # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/lib/activitypub/videos/shared/abstract-builder.ts#L47-L52
             # currently an error "Cannot find associated video channel to video" is raised
             # in the meantime, implement a default channel for users
             {
@@ -374,7 +377,8 @@ def video(request, slug):
             {
                 "type": "Image",
                 "url": video.get_thumbnail_url(scheme=True),
-                # only image/jpeg is supported on peertube - TODO: open a ticket to add support for other formats
+                # only image/jpeg is supported on peertube
+                # TODO: open a ticket to add support for other formats
                 "mediaType": video.thumbnail.file_type,
                 # width & height ar needed - TODO: implement size calculation in pod
                 "width": 724,
@@ -446,6 +450,9 @@ def channel(request, slug):
             for owner in channel.owners.all()
         ],
     }
+
+    # TODO: This is hard to debug, add custom error messages for everything or doc
+    # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L72-L87
 
     if channel.headband:
         response["image"] = {
