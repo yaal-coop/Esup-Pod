@@ -76,6 +76,15 @@ def send_follow_request(metadata):
 
 
 @app.task(bind=True)
-def task_follow(self, url):
+def task_follow(self, following_id):
+    following = Following.objects.get(id=following_id)
+    return True
     metadata = get_peertube_account_metadata(url)
     return send_follow_request(metadata)
+
+
+@app.task(bind=True)
+def task_index_videos(self, following_id):
+    following = Following.objects.get(id=following_id)
+    return True
+
