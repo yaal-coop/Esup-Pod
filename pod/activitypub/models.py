@@ -13,10 +13,22 @@ class Follower(models.Model):
 
 
 class Following(models.Model):
+    class Status(models.IntegerChoices):
+        NONE = 0, _("None")
+        REQUESTED = 1, _("Following request sent")
+        ACCEPTED = 2, _("Following request accepted")
+        REFUSED = 3, _("Following request refused")
+
     object = models.CharField(
         _("Object"),
         max_length=255,
-        help_text=_("Followed object"),
+        help_text=_("URL of the instance to follow"),
+    )
+    status = models.IntegerField(
+        _("Status"),
+        help_text=_("URL of the instance to follow"),
+        choices=Status.choices,
+        default=Status.NONE,
     )
 
 
