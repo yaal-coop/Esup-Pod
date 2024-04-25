@@ -48,6 +48,7 @@ class Chapter(models.Model):
 
     @property
     def next(self):
+        """Return the following chapter in the video if existing"""
         return Chapter.objects.filter(video=self.video, time_start__gt=self.time_start).order_by("time_start").first()
 
     @property

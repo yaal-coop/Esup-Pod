@@ -5,23 +5,47 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
-from django.template.defaultfilters import slugify
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-from markdownify import markdownify
 
 from pod.video.models import Channel, Video
 
 from .constants import (
     AP_DEFAULT_CONTEXT,
-    AP_LICENSE_MAPPING,
     AP_PT_CHANNEL_CONTEXT,
     AP_PT_CHAPTERS_CONTEXT,
     AP_PT_VIDEO_CONTEXT,
     INSTANCE_ACTOR_ID,
 )
+from .serialization import (
+    video_attributions,
+    video_category,
+    video_chapters,
+    video_comments,
+    video_dates,
+    video_description,
+    video_download,
+    video_duration,
+    video_icon,
+    video_language,
+    video_licences,
+    video_likes,
+    video_live,
+    video_name,
+    video_preview,
+    video_sensitivity,
+    video_shares,
+    video_state,
+    video_subtitles,
+    video_support,
+    video_tags,
+    video_transcoding,
+    video_urls,
+    video_uuid,
+    video_views,
+)
 from .tasks import send_accept_request
-from .utils import ap_url, make_magnet_url, stable_uuid
+from .utils import ap_url
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +62,6 @@ def nodeinfo(request):
             },
             {
                 "rel": "https://www.w3.org/ns/activitystreams#Application",
-                # "href": f"http://localhost:9000/accounts/{INSTANCE_ACTOR_ID}",
                 "href": ap_url(reverse("activitypub:account")),
             },
         ]
@@ -49,6 +72,14 @@ def nodeinfo(request):
 
 @csrf_exempt
 def webfinger(request):
+    """webfinger endpoint as described in RFC7033.
+
+    Deal with account information request and return account endpoints.
+
+    https://www.rfc-editor.org/rfc/rfc7033.html
+    https://docs.joinmastodon.org/spec/webfinger/
+    """
+
     # TODO: reject accounts that are not peertube@THISDOMAIN
 
     resource = request.GET.get("resource", "")
@@ -101,9 +132,9 @@ def account(request, username=None):
             response["icon"] = [
                 {
                     "type": "Image",
-                    "url": user.owner.userpicture.file.url,
-                    # "height": 48,
-                    # "width": 48,
+                    "url": ap_url(user.owner.userpicture.file.url),
+                    "height": user.owner.userpicture.file.width,
+                    "width": user.owner.userpicture.file.height,
                     "mediaType": user.owner.userpicture.file_type,
                 },
             ]
@@ -232,190 +263,45 @@ def followers(request, username=None):
 
 @csrf_exempt
 def video(request, slug):
-    # TODO: ask for a better error description than 'maybe not a video object'
     video = get_object_or_404(Video, slug=slug)
     response = {
         "@context": AP_DEFAULT_CONTEXT + [AP_PT_VIDEO_CONTEXT],
         "id": ap_url(reverse("activitypub:video", kwargs={"slug": slug})),
         "to": ["https://www.w3.org/ns/activitystreams#Public"],
-        "cc": ["https://tube.aquilenet.fr/accounts/user/followers"],
+        "cc": [
+            ap_url(
+                reverse(
+                    "activitypub:followers", kwargs={"username": video.owner.username}
+                )
+            )
+        ],
         "type": "Video",
-        "name": video.title,
-        # duration must fit the xsd:duration format
-        # https://www.w3.org/TR/xmlschema11-2/#duration
-        "duration": f"PT{video.duration}S",
-        # needed by peertube in version 4 exactly
-        # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L76
-        "uuid": stable_uuid(video.title, version=4),
-        # needed by peertube
-        "views": video.viewcount,
-        "waitTranscoding": video.encoding_in_progress,
-        "commentsEnabled": not video.disable_comment,
-        "downloadEnabled": video.allow_downloading,
-        # needed by peertube
-        "published": video.date_added.isoformat(),
-        # needed by peertube
-        "updated": video.date_added.isoformat(),
-        # tags (even empty) are needed by peertube
-        # TODO: ask for tags to be optional
-        # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L148-L157
-        "tag": [
-            {"type": "Hashtag", "name": slugify(tag)} for tag in video.tags.split(" ")
-        ],
-        "url": (
-            [
-                {
-                    # Webpage
-                    "type": "Link",
-                    "mediaType": "text/html",
-                    "href": ap_url(reverse("video:video", args=(video.slug,))),
-                },
-            ]
-            + [
-                {
-                    # MP4 link
-                    "type": "Link",
-                    "mediaType": mp4.encoding_format,
-                    "href": ap_url(mp4.source_file.url),
-                    "height": mp4.height,
-                    "width": mp4.width,
-                    "size": mp4.source_file.size,
-                    # TODO: get the fps
-                    #"fps": 30,
-                }
-                for mp4 in video.get_video_mp4()
-            ]
-            + [
-                {
-                    "type": "Link",
-                    "mediaType": "application/x-bittorrent;x-scheme-handler/magnet",
-                    "href": make_magnet_url(video, mp4),
-                    "height": mp4.height,
-                    "width": mp4.width,
-                    # TODO: get the fps
-                    #"fps": 30,
-                }
-                for mp4 in video.get_video_mp4()
-                # peertube needs a matching magnet url
-                # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/lib/activitypub/videos/shared/object-to-model-attributes.ts#L61-L64
-                # TODO: ask for it to be optional
-            ]
-        ),
-        "attributedTo": [
-            # needed by peertube
-            {
-                "type": "Person",
-                "id": ap_url(
-                    reverse(
-                        "activitypub:account", kwargs={"username": video.owner.username}
-                    )
-                ),
-            },
-        ]
-        + [
-            # needed by peertube
-            # TODO: ask peertube to make this optional
-            # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/lib/activitypub/videos/shared/abstract-builder.ts#L47-L52
-            # currently an error "Cannot find associated video channel to video" is raised
-            # in the meantime, implement a default channel for users
-            {
-                "type": "Group",
-                "id": ap_url(
-                    reverse("activitypub:channel", kwargs={"slug": channel.slug})
-                ),
-            }
-            for channel in video.channel.all()
-        ],
-        # needed by peertube
-        # TODO: ask for it to be optional
-        "sensitive": False,
-        # TODO: ask to make likes/dislikes/shares/comments optional
-        # needed by peertube
-        "likes": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
-        # needed by peertube
-        "dislikes": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
-        # needed by peertube
-        "shares": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
-        # needed by peertube
-        "comments": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
+        **video_name(video),
+        **video_duration(video),
+        **video_uuid(video),
+        **video_views(video),
+        **video_transcoding(video),
+        **video_comments(video),
+        **video_download(video),
+        **video_dates(video),
+        **video_tags(video),
+        **video_urls(video),
+        **video_attributions(video),
+        **video_sensitivity(video),
+        **video_likes(video),
+        **video_shares(video),
+        **video_category(video),
+        **video_state(video),
+        **video_support(video),
+        **video_preview(video),
+        **video_live(video),
+        **video_subtitles(video),
+        **video_chapters(video),
+        **video_licences(video),
+        **video_language(video),
+        **video_description(video),
+        **video_icon(video),
     }
-    # we could use video.type as AP 'category'
-    # but peertube categories are fixed, and identifiers are expected to be integers
-    # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/initializers/constants.ts#L544-L563
-    # example of expected content:
-    #   "category": {"identifier": "11", "name": "News & Politics & shit"}
-
-    # 'state' is optional
-    # peertube valid values are
-    # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/packages/models/src/videos/video-state.enum.ts#L1-L12C36
-
-    # 'support' is not managed by pod
-
-    # 'preview' thumbnails are not supported by pod
-
-    # We don't support live at the moment, so the following optional fields are ignored
-    # isLiveBroadcast, liveSaveReplay, permanentLive, latencyMode, peertubeLiveChat
-
-    # TODO: implement "originallyPublishedAt" when federation is implemented on pod side
-
-    has_tracks = video.track_set.all().count() > 0
-    if has_tracks:
-        response["subtitleLanguage"] = [
-            {
-                "identifier": track.lang,
-                "name": track.get_label_lang(),
-                "url": ap_url(track.src.file.url),
-            }
-            for track in video.track_set.all()
-        ]
-
-    has_chapters = video.chapter_set.all().count() > 0
-    if has_chapters:
-        response["hasParts"] = ap_url(
-            reverse("activitypub:chapters", kwargs={"slug": slug})
-        )
-
-    reverse_license_mapping = {v: k for k, v in AP_LICENSE_MAPPING.items()}
-    if video.licence and video.licence in reverse_license_mapping:
-        response["licence"] = {
-            # peertube needs integers identifiers
-            # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L78
-            # TODO: ask why not identifiers like 'by-nd'
-            "identifier": str(reverse_license_mapping[video.licence]),
-            "name": video.get_licence(),
-        }
-
-    if video.main_lang:
-        response["language"] = {
-            "identifier": video.main_lang,
-            "name": video.get_main_lang(),
-        }
-
-    if video.description:
-        # peertube only supports one languages
-        # TODO ask for several descriptions in several languages
-
-        # peertube only supports markdown and not text/html
-        # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L182
-        # TODO: ask peertube for text/html support
-        response["mediaType"] = "text/markdown"
-        response["content"] = markdownify(video.description)
-
-    if video.thumbnail:
-        # https://github.com/Chocobozzz/PeerTube/blob/8da3e2e9b8229215e3eeb030b491a80cf37f889d/server/core/helpers/custom-validators/activitypub/videos.ts#L185-L198
-        response["icon"] = [
-            {
-                "type": "Image",
-                "url": video.get_thumbnail_url(scheme=True),
-                # only image/jpeg is supported on peertube
-                # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L192
-                # TODO: open a ticket to add support for other formats
-                "mediaType": video.thumbnail.file_type,
-                # width & height ar needed by peertube
-                "width": video.thumbnail.file.width,
-                "height": video.thumbnail.file.height,
-            },
-        ]
 
     logger.warning(f"video response: {response}")
     return JsonResponse(response, status=200)
@@ -480,9 +366,6 @@ def channel(request, slug):
             for owner in channel.owners.all()
         ],
     }
-
-    # TODO: This is hard to debug, add custom error messages for everything or doc
-    # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L72-L87
 
     if channel.headband:
         response["image"] = {

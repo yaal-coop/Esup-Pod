@@ -3,6 +3,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from pod.video.models import Video
 
+
 class Follower(models.Model):
     actor = models.CharField(
         _("Actor"),
