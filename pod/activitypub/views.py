@@ -54,10 +54,19 @@ AP_PAGE_SIZE = 25
 
 
 def nodeinfo(request):
+    """
+    Nodeinfo endpoint. This is the entrypoint for ActivityPub federation.
+
+    https://github.com/jhass/nodeinfo/blob/main/PROTOCOL.md
+    https://nodeinfo.diaspora.software/
+    """
+
     response = {
         "links": [
             {
                 "rel": "http://nodeinfo.diaspora.software/ns/schema/2.0",
+                # This URL is not implemented yet as it does not seem mandatory
+                # for Peertube pairing.
                 "href": ap_url("/nodeinfo/2.0.json"),
             },
             {
@@ -80,6 +89,7 @@ def webfinger(request):
     https://docs.joinmastodon.org/spec/webfinger/
     """
 
+    # TODO: check that this is even needed
     # TODO: reject accounts that are not peertube@THISDOMAIN
 
     resource = request.GET.get("resource", "")
@@ -100,6 +110,12 @@ def webfinger(request):
 
 @csrf_exempt
 def account(request, username=None):
+    """
+    'Person' or 'Application' description as defined by ActivityStreams.
+
+    https://www.w3.org/TR/activitystreams-vocabulary/#dfn-person
+    """
+
     url_args = {"username": username} if username else {}
     instance_actor_url = ap_url(reverse("activitypub:account"))
     context = (
@@ -149,6 +165,11 @@ def account(request, username=None):
 
 @csrf_exempt
 def inbox(request, username=None):
+    """
+    Inbox as defined in ActivityPub.
+    https://www.w3.org/TR/activitypub/#inbox
+    """
+
     data = json.loads(request.body.decode()) if request.body else None
     logger.warning(f"inbox query: {data}")
     # TODO: reject invalid objects
@@ -171,7 +192,13 @@ def inbox(request, username=None):
 
 @csrf_exempt
 def outbox(request, username=None):
-    # list all current videos
+    """
+    Outbox as defined in ActivityPub.
+    https://www.w3.org/TR/activitypub/#outbox
+
+    Lists videos 'Announce' objects.
+    """
+
     url_args = {"username": username} if username else {}
     page = int(request.GET.get("page", 0))
     user = get_object_or_404(User, username=username) if username else None
@@ -237,6 +264,12 @@ def outbox(request, username=None):
 
 @csrf_exempt
 def following(request, username=None):
+    """
+    'Following' objects collection as defined in ActivityPub.
+
+    https://www.w3.org/TR/activitypub/#following
+    """
+
     url_args = {"username": username} if username else {}
     response = {
         "@context": AP_DEFAULT_CONTEXT,
@@ -250,6 +283,12 @@ def following(request, username=None):
 
 @csrf_exempt
 def followers(request, username=None):
+    """
+    'Followers' objects collection as defined ActivityPub.
+
+    https://www.w3.org/TR/activitypub/#followers
+    """
+
     url_args = {"username": username} if username else {}
     response = {
         "@context": AP_DEFAULT_CONTEXT,
@@ -263,6 +302,13 @@ def followers(request, username=None):
 
 @csrf_exempt
 def video(request, slug):
+    """
+    'Video' object as defined on ActivityStreams, with additions from the Peertube NS.
+
+    https://www.w3.org/TR/activitystreams-vocabulary/#dfn-video
+    https://docs.joinpeertube.org/api/activitypub#video
+    """
+
     video = get_object_or_404(Video, slug=slug)
     response = {
         "@context": AP_DEFAULT_CONTEXT + [AP_PT_VIDEO_CONTEXT],
@@ -309,6 +355,13 @@ def video(request, slug):
 
 @csrf_exempt
 def channel(request, slug):
+    """
+    'Group' object as defined by ActivityStreams, with additions from the Peertube NS.
+
+    https://www.w3.org/TR/activitystreams-vocabulary/#dfn-group
+    https://docs.joinpeertube.org/api/activitypub
+    """
+
     channel = get_object_or_404(Channel, slug=slug)
     instance_actor_url = ap_url(reverse("activitypub:account"))
     # https://github.com/Chocobozzz/PeerTube/blob/8da3e2e9b8229215e3eeb030b491a80cf37f889d/server/core/helpers/custom-validators/activitypub/actor.ts#L62
@@ -382,6 +435,13 @@ def channel(request, slug):
 
 @csrf_exempt
 def likes(request, slug):
+    """
+    'Like' objects collection as defined by ActivityStreams and ActivityPub.
+
+    https://www.w3.org/TR/activitystreams-vocabulary/#dfn-like
+    https://www.w3.org/TR/activitypub/#liked
+    """
+
     video = get_object_or_404(Video, slug=slug)
     response = {
         "@context": AP_DEFAULT_CONTEXT,
@@ -394,6 +454,13 @@ def likes(request, slug):
 
 @csrf_exempt
 def dislikes(request, slug):
+    """
+    'Dislike' objects collection as defined by ActivityStreams and ActivityPub.
+
+    https://www.w3.org/TR/activitystreams-vocabulary/#dfn-like
+    https://www.w3.org/TR/activitypub/#liked
+    """
+
     video = get_object_or_404(Video, slug=slug)
     response = {
         "@context": AP_DEFAULT_CONTEXT,
@@ -406,6 +473,12 @@ def dislikes(request, slug):
 
 @csrf_exempt
 def shares(request, slug):
+    """
+    'Share' objects collection as defined by ActivityPub.
+
+    https://www.w3.org/TR/activitypub/#video_shares
+    """
+
     video = get_object_or_404(Video, slug=slug)
     response = {
         "@context": AP_DEFAULT_CONTEXT,
@@ -418,6 +491,12 @@ def shares(request, slug):
 
 @csrf_exempt
 def comments(request, slug):
+    """
+    'Note' objects collection as defined by ActivityStreams.
+
+    https://www.w3.org/TR/activitystreams-vocabulary/#dfn-note
+    """
+
     video = get_object_or_404(Video, slug=slug)
     # TODO: video.notecomments
     response = {
@@ -431,6 +510,12 @@ def comments(request, slug):
 
 @csrf_exempt
 def chapters(request, slug):
+    """
+    Video chapters description as defined by Peertube.
+
+    https://joinpeertube.org/ns
+    """
+
     video = get_object_or_404(Video, slug=slug)
     # TODO: video.chapters
     response = {
