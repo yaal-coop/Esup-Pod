@@ -7,7 +7,7 @@ from .tasks import task_follow, task_index_videos
 
 @admin.register(Follower)
 class FollowerAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("actor",)
 
 
 @admin.action(description=_("Send the federation request"))
@@ -27,3 +27,7 @@ def reindex_videos(modeladmin, request, queryset):
 @admin.register(Following)
 class FollowingAdmin(admin.ModelAdmin):
     actions = [send_federation_request, reindex_videos]
+    list_display = (
+        "object",
+        "status",
+    )
