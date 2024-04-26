@@ -87,4 +87,3 @@ def task_follow(self, following_id):
 def task_index_videos(self, following_id):
     following = Following.objects.get(id=following_id)
     return True
-
