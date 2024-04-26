@@ -37,7 +37,9 @@ def video_comments(video):
     """the comments endpoint is needed by peertube"""
     return {
         "commentsEnabled": not video.disable_comment,
-        "comments": ap_url(reverse("activitypub:comments", kwargs={"slug": video.slug})),
+        "comments": ap_url(
+            reverse("activitypub:comments", kwargs={"slug": video.slug})
+        ),
     }
 
 

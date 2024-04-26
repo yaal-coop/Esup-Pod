@@ -30,10 +30,13 @@ TBD
 
 ## Configuration
 
-A RSA keypair is needed for ActivityPub to work. They can be generated with python:
+A RSA keypair is needed for ActivityPub to work, and passed as
+`ACTIVITYPUB_PUBLIC_KEY` and `ACTIVITYPUB_PRIVATE_KEY` configuration settings.
+They can be generated with python:
 
 ```python
 from Crypto.PublicKey import RSA
+
 activitypub_key = RSA.generate(2048)
 
 # Generate the private key
@@ -46,3 +49,5 @@ print(activitypub_key.export_key().decode())
 # in a variable named ACTIVITYPUB_PUBLIC_KEY
 print(activitypub_key.publickey().export_key().decode())
 ```
+
+The federation also needs celery to be configured (`CELERY_BROKER_URL`).
