@@ -1,4 +1,5 @@
 """Django ActivityPub endpoints"""
+
 from urllib.parse import urlparse
 import json
 import logging
@@ -187,16 +188,20 @@ def inbox(request, username=None):
             follow_id=data["id"],
         )
 
-    elif not username and data["type"] == "Accept" and data["object"]["type"] == "Follow":
+    elif (
+        not username and data["type"] == "Accept" and data["object"]["type"] == "Follow"
+    ):
         parsed = urlparse(data["object"]["object"])
-        obj=f"{parsed.scheme}://{parsed.netloc}"
+        obj = f"{parsed.scheme}://{parsed.netloc}"
         follower = Following.objects.get(object=obj)
         follower.status = Following.Status.ACCEPTED
         follower.save()
 
-    elif not username and data["type"] == "Reject" and data["object"]["type"] == "Follow":
+    elif (
+        not username and data["type"] == "Reject" and data["object"]["type"] == "Follow"
+    ):
         parsed = urlparse(data["object"]["object"])
-        obj=f"{parsed.scheme}://{parsed.netloc}"
+        obj = f"{parsed.scheme}://{parsed.netloc}"
         follower = Following.objects.get(object=obj)
         follower.status = Following.Status.REFUSED
         follower.save()

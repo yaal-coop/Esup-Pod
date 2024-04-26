@@ -14,7 +14,6 @@ from .utils import ap_url, signed_payload_headers
 logger = logging.getLogger(__name__)
 
 
-
 def follow(following_id):
     following = Following.objects.get(id=following_id)
 
