@@ -321,7 +321,7 @@ def video_icon(video):
     This would allow Pod to avoid using markdownify
 
     """
-    if not video.thumnail:
+    if not video.thumbnail:
         return {}
 
     return {
