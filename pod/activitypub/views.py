@@ -17,6 +17,7 @@ from .constants import (
     AP_PT_VIDEO_CONTEXT,
     INSTANCE_ACTOR_ID,
 )
+from .network import send_accept_request
 from .serialization import (
     video_attributions,
     video_category,
@@ -44,7 +45,6 @@ from .serialization import (
     video_uuid,
     video_views,
 )
-from .tasks import send_accept_request
 from .utils import ap_url
 
 logger = logging.getLogger(__name__)
