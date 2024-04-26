@@ -6,7 +6,6 @@ x-elasticsearch-volumes: &elasticsearch-volumes
 
 services:
   pod:
-    hostname: pod.localhost
     container_name: pod-dev-with-volumes
     hostname: pod.localhost
     build:
@@ -19,7 +18,6 @@ services:
       - ./.env.dev
     ports:
       - 8000:8000
-      - 8080:8080
     volumes: *pod-volumes
 
   elasticsearch:
@@ -44,34 +42,6 @@ services:
       - ./.env.dev
     ports:
       - 6379:6379
-
-  peertube:
-    container_name: peertube
-    hostname: peertube.localhost
-    image: chocobozzz/peertube:develop-bookworm
-    ports:
-      - 9000:9000
-      - 3000:3000
-    env_file:
-      - peertube.env
-    depends_on:
-      - postgres
-      - redis
-      - postfix
-    command: sh -c "apt update && apt install --yes neovim ripgrep && yarn install && npm run dev"
-    restart: "always"
-
-  postgres:
-    image: postgres:13-alpine
-    env_file:
-      - peertube.env
-    restart: "always"
-
-  postfix:
-    image: mwader/postfix-relay
-    env_file:
-      - peertube.env
-    restart: "always"
 
 #  redis-commander:
 #    container_name: redis-commander
