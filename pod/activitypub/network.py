@@ -22,8 +22,13 @@ def follow(following_id):
     return send_follow_request(following, metadata)
 
 
-def task_index_videos(following_id):
+def index_videos(following_id):
     following = Following.objects.get(id=following_id)
+
+    metadata = get_instance_application_account_metadata(following.object)
+    outbox_content = requests.get(metadata["outbox"], headers=BASE_HEADERS).json()
+    if "first" in outbox_content:
+        index_videos_page(outbox_content["first"])
     return True
 
 
@@ -62,7 +67,6 @@ def send_accept_request(follow_actor, follow_object, follow_id):
         },
     }
     signature_headers = signed_payload_headers(payload, inbox)
-    logging.warning(f"send {inbox}\n{signature_headers}\n{payload}")
     response = requests.post(
         inbox, json=payload, headers={**BASE_HEADERS, **signature_headers}
     )
@@ -89,3 +93,18 @@ def send_follow_request(following, metadata):
     following.save()
 
     return response.status_code == 204
+
+
+def index_videos_page(page_url):
+    content = requests.get(page_url, headers=BASE_HEADERS).json()
+    for item in content["orderedItems"]:
+        index_video(item["object"])
+
+    if "next" in content:
+        index_videos_page(content["next"])
+
+
+def index_video(video_url):
+    content = requests.get(video_url, headers=BASE_HEADERS).json()
+    # TODO: Build ExternalVideo object from 'content'
+    logger.warning(f"{content}")
