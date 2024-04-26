@@ -1,3 +1,5 @@
+"""Django ActivityPub endpoints"""
+from urllib.parse import urlparse
 import json
 import logging
 
@@ -9,6 +11,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
 from pod.video.models import Channel, Video
+from .models import Following
 
 from .constants import (
     AP_DEFAULT_CONTEXT,
@@ -184,8 +187,22 @@ def inbox(request, username=None):
             follow_id=data["id"],
         )
 
+    elif not username and data["type"] == "Accept" and data["object"]["type"] == "Follow":
+        parsed = urlparse(data["object"]["object"])
+        obj=f"{parsed.scheme}://{parsed.netloc}"
+        follower = Following.objects.get(object=obj)
+        follower.status = Following.Status.ACCEPTED
+        follower.save()
+
+    elif not username and data["type"] == "Reject" and data["object"]["type"] == "Follow":
+        parsed = urlparse(data["object"]["object"])
+        obj=f"{parsed.scheme}://{parsed.netloc}"
+        follower = Following.objects.get(object=obj)
+        follower.status = Following.Status.REFUSED
+        follower.save()
+
     else:
-        logger.warning("... ignoring")
+        logger.warning(f"... ignoring: {data}")
 
     return HttpResponse(204)
 
