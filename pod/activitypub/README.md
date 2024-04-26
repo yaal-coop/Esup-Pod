@@ -27,3 +27,22 @@ Here is what happens when two instances, say *Node A* and *Node B* (being Pod or
 
 - Node B publishes, edit or remove a `Video`
 TBD
+
+## Configuration
+
+A RSA keypair is needed for ActivityPub to work. They can be generated with python:
+
+```python
+from Crypto.PublicKey import RSA
+activitypub_key = RSA.generate(2048)
+
+# Generate the private key
+# Add the content of this command in 'pod/custom/settings_local.py'
+# in a variable named ACTIVITYPUB_PRIVATE_KEY
+print(activitypub_key.export_key().decode())
+
+# Generate the public key
+# Add the content of this command in 'pod/custom/settings_local.py'
+# in a variable named ACTIVITYPUB_PUBLIC_KEY
+print(activitypub_key.publickey().export_key().decode())
+```
