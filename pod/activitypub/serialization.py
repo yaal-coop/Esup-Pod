@@ -3,7 +3,13 @@ from django.urls import reverse
 from markdownify import markdownify
 
 from .constants import AP_LICENSE_MAPPING
+from .models import ExternalVideo
 from .utils import ap_url, make_magnet_url, stable_uuid
+
+
+def ap_video_to_external_video(payload):
+    """Create an ExternalVideo object from an AP Video payload."""
+    return ExternalVideo.objects.create()
 
 
 def video_name(video):
