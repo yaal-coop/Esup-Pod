@@ -13,5 +13,5 @@ class VideoDiscoveryTest(ActivityPubTestCase):
 
         assert (
             video.ap_id
-            == "http://peertube.localhost:9000/videos/watch/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77"
+            == "http://peertube.test/videos/watch/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77"
         )
