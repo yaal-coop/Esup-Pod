@@ -100,4 +100,6 @@ QQIDAQAB
 
 The `DOCKER_ENV` environment var should be set to `full` so a peertube instance and a ActivityPub celery worker are launched.
 
+The pod `Site` must be set on `pod.localhost:8080` in the [admin pannel](http://pod.localhost:8080/admin/sites/site/1/change/).
+
 Then peertube is available at http://peertube.localhost:9000, and the address to be used for pod is http://pod.localhost:8080
