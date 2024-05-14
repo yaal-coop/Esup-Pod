@@ -37,13 +37,13 @@
             "likes": {"@id": "as:likes", "@type": "@id"},
             "dislikes": {"@id": "as:dislikes", "@type": "@id"},
             "shares": {"@id": "as:shares", "@type": "@id"},
-            "comments": {"@id": "as:comments", "@type": "@id"},
-        },
+            "comments": {"@id": "as:comments", "@type": "@id"}
+        }
     ],
     "to": ["https://www.w3.org/ns/activitystreams#Public"],
-    "cc": ["http://peertube.localhost:9000/accounts/root/followers"],
+    "cc": ["http://peertube.test/accounts/root/followers"],
     "type": "Video",
-    "id": "http://peertube.localhost:9000/videos/watch/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77",
+    "id": "http://peertube.test/videos/watch/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77",
     "name": "terre",
     "duration": "PT31S",
     "uuid": "dc6d7e53-9acc-45ca-ac3e-adac05c4bb77",
@@ -64,18 +64,18 @@
     "icon": [
         {
             "type": "Image",
-            "url": "http://peertube.localhost:9000/lazy-static/thumbnails/ea692668-73f8-4e4b-991d-dfcd624e20d2.jpg",
+            "url": "http://peertube.test/lazy-static/thumbnails/ea692668-73f8-4e4b-991d-dfcd624e20d2.jpg",
             "mediaType": "image/jpeg",
             "width": 280,
-            "height": 157,
+            "height": 157
         },
         {
             "type": "Image",
-            "url": "http://peertube.localhost:9000/lazy-static/previews/f7fb33b9-456f-4424-93c6-df1d2971bac3.jpg",
+            "url": "http://peertube.test/lazy-static/previews/f7fb33b9-456f-4424-93c6-df1d2971bac3.jpg",
             "mediaType": "image/jpeg",
             "width": 850,
-            "height": 480,
-        },
+            "height": 480
+        }
     ],
     "preview": [
         {
@@ -84,14 +84,14 @@
             "url": [
                 {
                     "mediaType": "image/jpeg",
-                    "href": "http://peertube.localhost:9000/lazy-static/storyboards/6098e6f6-32d2-486d-914c-cb0a3c57d69f.jpg",
+                    "href": "http://peertube.test/lazy-static/storyboards/6098e6f6-32d2-486d-914c-cb0a3c57d69f.jpg",
                     "width": 1920,
                     "height": 324,
                     "tileWidth": 192,
                     "tileHeight": 108,
-                    "tileDuration": "PT1S",
+                    "tileDuration": "PT1S"
                 }
-            ],
+            ]
         }
     ],
     "aspectRatio": 1.7778,
@@ -99,48 +99,48 @@
         {
             "type": "Link",
             "mediaType": "text/html",
-            "href": "http://peertube.localhost:9000/videos/watch/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77",
+            "href": "http://peertube.test/videos/watch/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77"
         },
         {
             "type": "Link",
             "mediaType": "application/x-mpegURL",
-            "href": "http://peertube.localhost:9000/static/streaming-playlists/hls/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/447c1b6e-ee16-45c6-a95b-4dfd59b257fe-master.m3u8",
+            "href": "http://peertube.test/static/streaming-playlists/hls/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/447c1b6e-ee16-45c6-a95b-4dfd59b257fe-master.m3u8",
             "tag": [
                 {
                     "type": "Infohash",
-                    "name": "ffb72178e2e9c853eb91c5532c3c6adc89139314",
+                    "name": "ffb72178e2e9c853eb91c5532c3c6adc89139314"
                 },
                 {
                     "type": "Link",
                     "name": "sha256",
                     "mediaType": "application/json",
-                    "href": "http://peertube.localhost:9000/static/streaming-playlists/hls/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/b21c8302-e745-4442-9a08-4cddfae40a53-segments-sha256.json",
+                    "href": "http://peertube.test/static/streaming-playlists/hls/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/b21c8302-e745-4442-9a08-4cddfae40a53-segments-sha256.json"
                 },
                 {
                     "type": "Link",
                     "mediaType": "video/mp4",
-                    "href": "http://peertube.localhost:9000/static/streaming-playlists/hls/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/1d139215-1cc2-4b2d-bb96-a4aa13c192fe-270-fragmented.mp4",
+                    "href": "http://peertube.test/static/streaming-playlists/hls/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/1d139215-1cc2-4b2d-bb96-a4aa13c192fe-270-fragmented.mp4",
                     "height": 270,
                     "width": 480,
                     "size": 653210,
-                    "fps": 30,
+                    "fps": 30
                 },
                 {
                     "type": "Link",
                     "rel": ["metadata", "video/mp4"],
                     "mediaType": "application/json",
-                    "href": "http://peertube.localhost:9000/api/v1/videos/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/metadata/4",
+                    "href": "http://peertube.test/api/v1/videos/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/metadata/4",
                     "height": 270,
                     "width": 480,
-                    "fps": 30,
+                    "fps": 30
                 },
                 {
                     "type": "Link",
                     "mediaType": "application/x-bittorrent",
-                    "href": "http://peertube.localhost:9000/lazy-static/torrents/07026719-d668-445b-a77b-184421c3842f-270-hls.torrent",
+                    "href": "http://peertube.test/lazy-static/torrents/07026719-d668-445b-a77b-184421c3842f-270-hls.torrent",
                     "height": 270,
                     "width": 480,
-                    "fps": 30,
+                    "fps": 30
                 },
                 {
                     "type": "Link",
@@ -148,37 +148,37 @@
                     "href": "magnet:?xs=http%3A%2F%2Fpeertube.localhost%3A9000%2Flazy-static%2Ftorrents%2F07026719-d668-445b-a77b-184421c3842f-270-hls.torrent&xt=urn:btih:5072ce02cf06578a6ea1c3aa95f80f25afc33949&dn=terre&tr=http%3A%2F%2Fpeertube.localhost%3A9000%2Ftracker%2Fannounce&tr=ws%3A%2F%2Fpeertube.localhost%3A9000%2Ftracker%2Fsocket&ws=http%3A%2F%2Fpeertube.localhost%3A9000%2Fstatic%2Fstreaming-playlists%2Fhls%2Fdc6d7e53-9acc-45ca-ac3e-adac05c4bb77%2F1d139215-1cc2-4b2d-bb96-a4aa13c192fe-270-fragmented.mp4",
                     "height": 270,
                     "width": 480,
-                    "fps": 30,
-                },
-            ],
+                    "fps": 30
+                }
+            ]
         },
         {
             "type": "Link",
             "name": "tracker-http",
             "rel": ["tracker", "http"],
-            "href": "http://peertube.localhost:9000/tracker/announce",
+            "href": "http://peertube.test/tracker/announce"
         },
         {
             "type": "Link",
             "name": "tracker-websocket",
             "rel": ["tracker", "websocket"],
-            "href": "ws://peertube.localhost:9000/tracker/socket",
-        },
+            "href": "ws://peertube.test/tracker/socket"
+        }
     ],
-    "likes": "http://peertube.localhost:9000/videos/watch/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/likes",
-    "dislikes": "http://peertube.localhost:9000/videos/watch/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/dislikes",
-    "shares": "http://peertube.localhost:9000/videos/watch/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/announces",
-    "comments": "http://peertube.localhost:9000/videos/watch/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/comments",
-    "hasParts": "http://peertube.localhost:9000/videos/watch/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/chapters",
+    "likes": "http://peertube.test/videos/watch/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/likes",
+    "dislikes": "http://peertube.test/videos/watch/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/dislikes",
+    "shares": "http://peertube.test/videos/watch/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/announces",
+    "comments": "http://peertube.test/videos/watch/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/comments",
+    "hasParts": "http://peertube.test/videos/watch/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77/chapters",
     "attributedTo": [
-        {"type": "Person", "id": "http://peertube.localhost:9000/accounts/root"},
+        {"type": "Person", "id": "http://peertube.test/accounts/root"},
         {
             "type": "Group",
-            "id": "http://peertube.localhost:9000/video-channels/root_channel",
-        },
+            "id": "http://peertube.test/video-channels/root_channel"
+        }
     ],
     "isLiveBroadcast": false,
     "liveSaveReplay": null,
     "permanentLive": null,
-    "latencyMode": null,
+    "latencyMode": null
 }
