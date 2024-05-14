@@ -209,7 +209,7 @@ def inbox(request, username=None):
     else:
         logger.warning(f"... ignoring: {data}")
 
-    return HttpResponse(204)
+    return HttpResponse(status=204)
 
 
 @csrf_exempt
