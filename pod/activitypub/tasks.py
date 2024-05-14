@@ -1,7 +1,16 @@
-from celery import Celery
-from django.conf import settings
+"""Celery tasks configuration."""
 
-activitypub_app = Celery("activitypub", broker=settings.ACTIVITYPUB_CELERY_BROKER_URL)
+try:
+    from ..custom import settings_local
+except ImportError:
+    from .. import settings as settings_local
+
+from celery import Celery
+
+ACTIVITYPUB_CELERY_BROKER_URL = getattr(
+    settings_local, "ACTIVITYPUB_CELERY_BROKER_URL", ""
+)
+activitypub_app = Celery("activitypub", broker=ACTIVITYPUB_CELERY_BROKER_URL)
 activitypub_app.conf.task_routes = {"pod.activitypub.tasks.*": {"queue": "activitypub"}}
 
 
