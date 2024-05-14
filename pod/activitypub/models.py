@@ -39,8 +39,8 @@ class ExternalVideo(Video):
         verbose_name=_("Source instance"),
         help_text=_("Video origin instance"),
     )
-    stream = models.CharField(
-        _("Stream url"),
+    ap_id = models.CharField(
+        _("Video identifier"),
         max_length=255,
-        help_text=_("External instance video stream"),
+        help_text=_("Video identifier URL"),
     )

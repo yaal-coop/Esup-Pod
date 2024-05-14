@@ -1,20 +1,11 @@
 import json
 from unittest import mock
 
-from django.test import TestCase
-
 from pod.activitypub.models import Follower
+from . import ActivityPubTestCase
 
 
-class ActivityPubViewTest(TestCase):
-    """ActivityPub test case."""
-
-    maxDiff = None
-    fixtures = ["initial_data.json"]
-    headers = {
-        "HTTP_ACCEPT": "application/activity+json, application/ld+json",
-    }
-
+class ActivityPubViewTest(ActivityPubTestCase):
     def test_webfinger_view(self):
         """Test for webfinger view."""
         account = "acct:instance@instance_domain"
