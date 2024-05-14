@@ -8,8 +8,9 @@ from django.conf import settings
 from django.urls import reverse
 
 from .constants import AP_DEFAULT_CONTEXT, BASE_HEADERS, INSTANCE_ACTOR_ID
-from .models import Follower, Following
+from .models import Follower, Following, ExternalVideo
 from .utils import ap_url, signed_payload_headers
+from .serialization import ap_video_to_external_video
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +28,12 @@ def index_videos(following_id):
     metadata = get_instance_application_account_metadata(following.object)
     outbox_content = requests.get(metadata["outbox"], headers=BASE_HEADERS).json()
     if "first" in outbox_content:
-        index_videos_page(outbox_content["first"])
+        index_videos_page(following, outbox_content["first"])
     return True
 
 
 def get_instance_application_account_url(url):
-    """Reads the instance nodeinfo well-known URL to get the main account URL."""
+    """Read the instance nodeinfo well-known URL to get the main account URL."""
     # TODO: handle exceptions
     nodeinfo_url = f"{url}/.well-known/nodeinfo"
     response = requests.get(nodeinfo_url, headers=BASE_HEADERS)
@@ -94,16 +95,18 @@ def send_follow_request(following, metadata):
     return response.status_code == 204
 
 
-def index_videos_page(page_url):
+def index_videos_page(following, page_url):
     content = requests.get(page_url, headers=BASE_HEADERS).json()
     for item in content["orderedItems"]:
-        index_video(item["object"])
+        index_video(following, item["object"])
 
     if "next" in content:
-        index_videos_page(content["next"])
+        index_videos_page(following, content["next"])
 
 
-def index_video(video_url):
-    content = requests.get(video_url, headers=BASE_HEADERS).json()
-    # TODO: Build ExternalVideo object from 'content'
-    logger.warning(f"{content}")
+def index_video(following, video_url):
+    payload = requests.get(video_url, headers=BASE_HEADERS).json()
+    logger.warning(f"{payload}")
+    extvideo = ap_video_to_external_video(payload)
+    extvideo.source_instance = following
+    extvideo.save()
