@@ -23,6 +23,7 @@ from .constants import (
 )
 from .tasks import task_send_accept_request
 from .tasks import task_read_announce
+from .tasks import task_update_video
 from .serialization import (
     video_attributions,
     video_category,
@@ -211,6 +212,11 @@ def inbox(request, username=None):
 
     elif not username and data["type"] == "Announce":
         task_read_announce.delay(actor=data["actor"], object_id=data["object"])
+
+    elif (
+        not username and data["type"] == "Update" and data["object"]["type"] == "Video"
+    ):
+        task_update_video.delay(video=data["object"])
 
     else:
         logger.warning(f"... ignoring: {data}")
