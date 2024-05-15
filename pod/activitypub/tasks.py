@@ -17,6 +17,7 @@ CELERY_TASK_ALWAYS_EAGER = getattr(settings, "CELERY_TASK_ALWAYS_EAGER", False)
 activitypub_app = Celery("activitypub", broker=ACTIVITYPUB_CELERY_BROKER_URL)
 activitypub_app.conf.task_routes = {"pod.activitypub.tasks.*": {"queue": "activitypub"}}
 activitypub_app.conf.task_always_eager = CELERY_TASK_ALWAYS_EAGER
+activitypub_app.conf.task_eager_propagates = CELERY_TASK_ALWAYS_EAGER
 
 
 @activitypub_app.task(bind=True)
@@ -45,3 +46,10 @@ def task_read_announce(self, actor, object_id):
     from .network import read_announce
 
     return read_announce(actor, object_id)
+
+
+@activitypub_app.task(bind=True)
+def task_update_video(self, video):
+    from .network import update_video
+
+    return update_video(video)
