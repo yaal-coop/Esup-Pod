@@ -114,26 +114,36 @@ def index_video(following, video_url):
 
 def read_announce(actor, object_id):
     actor_object = requests.get(actor, headers=BASE_HEADERS).json()
-    announced_object = requests.get(object_id, headers=BASE_HEADERS).json()
+    obj = requests.get(object_id, headers=BASE_HEADERS).json()
 
-    if announced_object["type"] != "Video":
-        logger.debug(f"Ignoring announce about {announced_object['type']}")
+    if obj["type"] != "Video":
+        logger.debug(f"Ignoring announce about {obj['type']}")
         # TODO: Deal with other objects, like comments
 
     # Announce for a Video created by a user account
     if actor_object["type"] in ("Application", "Person"):
         # TODO: create an ExternalVideo
-        logger.warning(f"TODO: Deal with Video created by {actor_object['type']}")
+        logger.warning(f"TODO: Handle Video creation by {actor_object['type']}")
 
     # Announce for a Video added to a channel
     elif actor_object["type"] in ("Group"):
         # TODO: update the external video to add it to the matching channel
-        logger.warning(f"TODO: Deal with Video created by {actor_object['type']}")
+        logger.warning(f"TODO: Handle Video creation by {actor_object['type']}")
 
     else:
-        logger.debug(f"Ignoring Video created by {actor_object['type']}")
+        logger.debug(f"Ignoring Video creation by {actor_object['type']}")
 
 
 def update_video(video):
     # TODO: update the external video details
     logger.warning("TODO: Deal with Video updates")
+
+
+def delete_video(object_id):
+    obj = requests.get(object_id, headers=BASE_HEADERS).json()
+
+    if obj["type"] != "Video":
+        logger.debug(f"Ignoring {obj['type']} deletion")
+
+    # TODO: Delete the ExternalVideo
+    logger.warning("TODO: Handle Video deletion")

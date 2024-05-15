@@ -75,3 +75,20 @@ class VideoUpdateTest(ActivityPubTestCase):
         self.assertEqual(response.status_code, 204)
 
         # TODO: assert ExternalVideo is updated
+
+    def test_video_delete(self):
+        """Test the video update activity on the inbox"""
+
+        with open("pod/activitypub/tests/fixtures/video_delete.json") as fd:
+            payload = json.load(fd)
+
+        with httmock.HTTMock(self.mock_get_video):
+            response = self.client.post(
+                "/ap/inbox",
+                json.dumps(payload),
+                content_type="application/json",
+                **self.headers,
+            )
+            self.assertEqual(response.status_code, 204)
+
+            # TODO: assert ExternalVideo is deleted
