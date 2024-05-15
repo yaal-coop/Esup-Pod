@@ -107,3 +107,25 @@ def index_video(following, video_url):
     extvideo = ap_video_to_external_video(payload)
     extvideo.source_instance = following
     extvideo.save()
+
+
+def read_announce(actor, object_id):
+    actor_object = requests.get(actor, headers=BASE_HEADERS).json()
+    announced_object = requests.get(object_id, headers=BASE_HEADERS).json()
+
+    if announced_object["type"] != "Video":
+        logger.debug(f"Ignoring announce about {announced_object['type']}")
+        # TODO: Deal with other objects, like comments
+
+    # Announce for a Video created by a user account
+    if actor_object["type"] in ("Application", "Person"):
+        # TODO: create an ExternalVideo
+        logger.warning(f"TODO: Deal with Video created by {actor_object['type']}")
+
+    # Announce for a Video added to a channel
+    elif actor_object["type"] in ("Group"):
+        # TODO: update the external video to add it to the matching channel
+        logger.warning(f"TODO: Deal with Video created by {actor_object['type']}")
+
+    else:
+        logger.debug(f"Ignoring Video created by {actor_object['type']}")
