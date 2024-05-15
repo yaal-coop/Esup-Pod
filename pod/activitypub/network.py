@@ -134,12 +134,12 @@ def read_announce(actor, object_id):
         logger.debug(f"Ignoring Video creation by {actor_object['type']}")
 
 
-def update_video(video):
+def external_video_update(video):
     # TODO: update the external video details
     logger.warning("TODO: Deal with Video updates")
 
 
-def delete_video(object_id):
+def external_video_deletion(object_id):
     obj = requests.get(object_id, headers=BASE_HEADERS).json()
 
     if obj["type"] != "Video":

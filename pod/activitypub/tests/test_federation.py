@@ -44,6 +44,7 @@ class ActivityPubViewTest(ActivityPubTestCase):
             "url": "http://localhost:9090/ap",
             "name": "pod",
             "preferredUsername": "pod",
+            'endpoints': {'sharedInbox': 'http://localhost:9090/ap/inbox'},
             "publicKey": {
                 "id": "http://localhost:9090/ap#main-key",
                 "owner": "http://localhost:9090/ap",

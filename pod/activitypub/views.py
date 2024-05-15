@@ -23,8 +23,8 @@ from .constants import (
 )
 from .tasks import task_send_accept_request
 from .tasks import task_read_announce
-from .tasks import task_update_video
-from .tasks import task_delete_video
+from .tasks import task_external_video_update
+from .tasks import task_external_video_deletion
 from .serialization import (
     video_attributions,
     video_category,
@@ -217,10 +217,10 @@ def inbox(request, username=None):
     elif (
         not username and data["type"] == "Update" and data["object"]["type"] == "Video"
     ):
-        task_update_video.delay(video=data["object"])
+        task_external_video_update.delay(video=data["object"])
 
     elif not username and data["type"] == "Delete":
-        task_delete_video.delay(object_id=data["object"])
+        task_external_video_deletion.delay(object_id=data["object"])
 
     else:
         logger.warning(f"... ignoring: {data}")
