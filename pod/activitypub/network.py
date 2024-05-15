@@ -9,6 +9,7 @@ from .constants import AP_DEFAULT_CONTEXT, BASE_HEADERS
 from .models import Follower, Following
 from .utils import ap_url, signed_payload_headers
 from .serialization import ap_video_to_external_video
+from pod.video.models import Video
 
 logger = logging.getLogger(__name__)
 
@@ -147,3 +148,18 @@ def external_video_deletion(object_id):
 
     # TODO: Delete the ExternalVideo
     logger.warning("TODO: Handle Video deletion")
+
+
+def broadcast_local_video_creation(video_id):
+    logger.warning("TODO: Broadcast Video creation")
+    video = Video.objects.get(id=video_id)
+
+
+def broadcast_local_video_update(video_id):
+    logger.warning("TODO: Broadcast Video update")
+    video = Video.objects.get(id=video_id)
+
+
+def broadcast_local_video_deletion(video_id):
+    logger.warning("TODO: Broadcast Video deletion")
+    video = Video.objects.get(id=video_id)

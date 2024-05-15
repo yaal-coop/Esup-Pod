@@ -60,3 +60,24 @@ def task_external_video_deletion(self, object_id):
     from .network import external_video_deletion
 
     return external_video_deletion(object_id)
+
+
+@activitypub_app.task(bind=True)
+def task_broadcast_local_video_creation(self, video_id):
+    from .network import broadcast_local_video_creation
+
+    return broadcast_local_video_creation(video_id)
+
+
+@activitypub_app.task(bind=True)
+def task_broadcast_local_video_update(self, video_id):
+    from .network import broadcast_local_video_update
+
+    return broadcast_local_video_update(video_id)
+
+
+@activitypub_app.task(bind=True)
+def task_broadcast_local_video_deletion(self, video_id):
+    from .network import broadcast_local_video_deletion
+
+    return broadcast_local_video_deletion(video_id)
