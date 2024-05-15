@@ -136,3 +136,6 @@ USE_DEBUG_TOOLBAR = False
 activitypub_key = RSA.generate(2048)
 ACTIVITYPUB_PRIVATE_KEY = activitypub_key.export_key().decode()
 ACTIVITYPUB_PUBLIC_KEY = activitypub_key.publickey().export_key().decode()
+
+# Directly execute celery tasks instead of delegating them to workers
+CELERY_TASK_ALWAYS_EAGER = True

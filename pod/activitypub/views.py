@@ -21,7 +21,7 @@ from .constants import (
     AP_PT_VIDEO_CONTEXT,
     INSTANCE_ACTOR_ID,
 )
-from .network import send_accept_request
+from .tasks import task_send_accept_request
 from .serialization import (
     video_attributions,
     video_category,
@@ -180,9 +180,8 @@ def inbox(request, username=None):
     # TODO: test double follows
     # TODO: test HTTP signature
 
-    # TODO: make an async call from this
     if not username and data["type"] == "Follow":
-        send_accept_request(
+        task_send_accept_request.delay(
             follow_actor=data["actor"],
             follow_object=data["object"],
             follow_id=data["id"],

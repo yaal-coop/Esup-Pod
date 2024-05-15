@@ -1,14 +1,12 @@
 """Long-standing operations"""
 
 import logging
-from urllib.parse import urlparse
 
 import requests
-from django.conf import settings
 from django.urls import reverse
 
-from .constants import AP_DEFAULT_CONTEXT, BASE_HEADERS, INSTANCE_ACTOR_ID
-from .models import Follower, Following, ExternalVideo
+from .constants import AP_DEFAULT_CONTEXT, BASE_HEADERS
+from .models import Follower, Following
 from .utils import ap_url, signed_payload_headers
 from .serialization import ap_video_to_external_video
 
@@ -49,7 +47,6 @@ def get_instance_application_account_metadata(domain):
 
 
 def send_accept_request(follow_actor, follow_object, follow_id):
-    logging.warning(f"read {follow_actor}")
     actor_account = requests.get(follow_actor, headers=BASE_HEADERS).json()
     inbox = actor_account["inbox"]
 
