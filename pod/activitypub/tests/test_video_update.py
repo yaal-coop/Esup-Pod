@@ -12,6 +12,7 @@ class VideoUpdateTest(ActivityPubTestCase):
         - one for the video addition on the user channel.
 
         This tests the situation where the account announce is received first.
+        TODO: Check what happens if the messages are received the other way
         """
 
         with open(
@@ -26,6 +27,7 @@ class VideoUpdateTest(ActivityPubTestCase):
                 content_type="application/json",
                 **self.headers,
             )
+            self.assertEqual(response.status_code, 204)
 
         # TODO: assert ExternalVideo is created
 
@@ -41,6 +43,7 @@ class VideoUpdateTest(ActivityPubTestCase):
                 content_type="application/json",
                 **self.headers,
             )
+            self.assertEqual(response.status_code, 204)
 
         # TODO: assert ExternalVideo is added to the channel
 
@@ -56,3 +59,19 @@ class VideoUpdateTest(ActivityPubTestCase):
             content_type="application/json",
             **self.headers,
         )
+
+    def test_video_update(self):
+        """Test the video update activity on the inbox"""
+
+        with open("pod/activitypub/tests/fixtures/video_update.json") as fd:
+            payload = json.load(fd)
+
+        response = self.client.post(
+            "/ap/inbox",
+            json.dumps(payload),
+            content_type="application/json",
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 204)
+
+        # TODO: assert ExternalVideo is updated

@@ -93,6 +93,7 @@ def send_follow_request(following, metadata):
 
 
 def index_videos_page(following, page_url):
+    """Parse a AP Video page payload, and handle each video."""
     content = requests.get(page_url, headers=BASE_HEADERS).json()
     for item in content["orderedItems"]:
         index_video(following, item["object"])
@@ -102,8 +103,10 @@ def index_videos_page(following, page_url):
 
 
 def index_video(following, video_url):
+    """Read a video payload and create an ExternalVideo object"""
+
     payload = requests.get(video_url, headers=BASE_HEADERS).json()
-    logger.warning(f"{payload}")
+    logger.warning(f"TODO: Deal with video indexation {payload}")
     extvideo = ap_video_to_external_video(payload)
     extvideo.source_instance = following
     extvideo.save()
@@ -129,3 +132,8 @@ def read_announce(actor, object_id):
 
     else:
         logger.debug(f"Ignoring Video created by {actor_object['type']}")
+
+
+def update_video(video):
+    # TODO: update the external video details
+    logger.warning("TODO: Deal with Video updates")
