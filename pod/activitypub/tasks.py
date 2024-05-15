@@ -1,6 +1,7 @@
 """Celery tasks configuration."""
 
 from django.conf import settings
+
 try:
     from ..custom import settings_local
 except ImportError:
@@ -37,3 +38,10 @@ def task_send_accept_request(self, follow_actor, follow_object, follow_id):
     from .network import send_accept_request
 
     return send_accept_request(follow_actor, follow_object, follow_id)
+
+
+@activitypub_app.task(bind=True)
+def task_read_announce(self, actor, object_id):
+    from .network import read_announce
+
+    return read_announce(actor, object_id)
