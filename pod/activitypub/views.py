@@ -135,6 +135,7 @@ def account(request, username=None):
         "followers": ap_url(reverse("activitypub:followers", kwargs=url_args)),
         "inbox": ap_url(reverse("activitypub:inbox", kwargs=url_args)),
         "outbox": ap_url(reverse("activitypub:outbox", kwargs=url_args)),
+        "endpoints": {"sharedInbox": ap_url(reverse("activitypub:inbox", kwargs=url_args))},
         "publicKey": {
             "id": f"{instance_actor_url}#main-key",
             "owner": instance_actor_url,
@@ -385,6 +386,7 @@ def channel(request, slug):
 
     channel = get_object_or_404(Channel, slug=slug)
     instance_actor_url = ap_url(reverse("activitypub:account"))
+    inbox_url = ap_url(reverse("activitypub:channel", kwargs={"slug": slug})) + "/inbox"
     # https://github.com/Chocobozzz/PeerTube/blob/8da3e2e9b8229215e3eeb030b491a80cf37f889d/server/core/helpers/custom-validators/activitypub/actor.ts#L62
     response = {
         "@context": AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT],
@@ -395,15 +397,14 @@ def channel(request, slug):
         # "playlists": "https://tube.aquilenet.fr/video-channels/USER_channel/playlists",
         # needed by peertube
         # this is a fake URL and is not intented to be reached
-        "inbox": ap_url(reverse("activitypub:channel", kwargs={"slug": slug}))
-        + "/inbox",
+        "inbox": inbox_url,
         # "outbox": "https://tube.aquilenet.fr/video-channels/USER_channel/outbox",
         # needed by peertube, seems to not support spaces
         "preferredUsername": channel.slug,
         # needed by peertube
         "url": ap_url(reverse("activitypub:channel", kwargs={"slug": slug})),
         "name": channel.title,
-        # "endpoints": {"sharedInbox": "https://tube.aquilenet.fr/inbox"},
+        "endpoints": {"sharedInbox": inbox},
         # needed by peertube
         "publicKey": {
             "id": f"{instance_actor_url}#main-key",
