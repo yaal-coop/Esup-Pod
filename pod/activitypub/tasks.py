@@ -53,3 +53,10 @@ def task_update_video(self, video):
     from .network import update_video
 
     return update_video(video)
+
+
+@activitypub_app.task(bind=True)
+def task_delete_video(self, object_id):
+    from .network import delete_video
+
+    return delete_video(object_id)
