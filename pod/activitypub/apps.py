@@ -1,6 +1,5 @@
 from django.apps import AppConfig
-from django.db.models.signals import post_save
-from django.db.models.signals import post_delete
+from django.db.models.signals import post_delete, post_save
 
 
 class ActivitypubConfig(AppConfig):
@@ -9,8 +8,8 @@ class ActivitypubConfig(AppConfig):
 
     def ready(self):
         from pod.video.models import Video
-        from .signals import on_video_save
-        from .signals import on_video_delete
+
+        from .signals import on_video_delete, on_video_save
 
         post_save.connect(on_video_save, sender=Video)
         post_delete.connect(on_video_delete, sender=Video)

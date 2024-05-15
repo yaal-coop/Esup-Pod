@@ -1,8 +1,10 @@
 """Signal callbacks"""
 
-from .tasks import task_broadcast_local_video_creation
-from .tasks import task_broadcast_local_video_update
-from .tasks import task_broadcast_local_video_deletion
+from .tasks import (
+    task_broadcast_local_video_creation,
+    task_broadcast_local_video_deletion,
+    task_broadcast_local_video_update,
+)
 
 
 def on_video_save(instance, created, **kwargs):

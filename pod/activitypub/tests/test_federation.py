@@ -1,8 +1,10 @@
 import json
-import httmock
 from unittest import mock
 
+import httmock
+
 from pod.activitypub.models import Follower
+
 from . import ActivityPubTestCase
 
 

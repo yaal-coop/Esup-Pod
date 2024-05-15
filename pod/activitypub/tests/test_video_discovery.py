@@ -1,6 +1,8 @@
 import json
-from . import ActivityPubTestCase
+
 from pod.activitypub.serialization import ap_video_to_external_video
+
+from . import ActivityPubTestCase
 
 
 class VideoDiscoveryTest(ActivityPubTestCase):
