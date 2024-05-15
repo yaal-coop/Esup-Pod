@@ -1,5 +1,7 @@
 import json
+
 import httmock
+
 from . import ActivityPubTestCase
 
 
