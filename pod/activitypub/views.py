@@ -1,8 +1,8 @@
 """Django ActivityPub endpoints"""
 
-from urllib.parse import urlparse
 import json
 import logging
+from urllib.parse import urlparse
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -12,7 +12,6 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
 from pod.video.models import Channel, Video
-from .models import Following
 
 from .constants import (
     AP_DEFAULT_CONTEXT,
@@ -21,36 +20,13 @@ from .constants import (
     AP_PT_VIDEO_CONTEXT,
     INSTANCE_ACTOR_ID,
 )
-from .tasks import task_send_accept_request
-from .tasks import task_read_announce
-from .tasks import task_external_video_update
-from .tasks import task_external_video_deletion
-from .serialization import (
-    video_attributions,
-    video_category,
-    video_chapters,
-    video_comments,
-    video_dates,
-    video_description,
-    video_download,
-    video_duration,
-    video_icon,
-    video_language,
-    video_licences,
-    video_likes,
-    video_live,
-    video_name,
-    video_preview,
-    video_sensitivity,
-    video_shares,
-    video_state,
-    video_subtitles,
-    video_support,
-    video_tags,
-    video_transcoding,
-    video_urls,
-    video_uuid,
-    video_views,
+from .models import Following
+from .serialization import video_to_ap_payload
+from .tasks import (
+    task_external_video_deletion,
+    task_external_video_update,
+    task_read_announce,
+    task_send_accept_request,
 )
 from .utils import ap_url
 
@@ -350,43 +326,8 @@ def video(request, slug):
     video = get_object_or_404(Video, slug=slug)
     response = {
         "@context": AP_DEFAULT_CONTEXT + [AP_PT_VIDEO_CONTEXT],
-        "id": ap_url(reverse("activitypub:video", kwargs={"slug": slug})),
-        "to": ["https://www.w3.org/ns/activitystreams#Public"],
-        "cc": [
-            ap_url(
-                reverse(
-                    "activitypub:followers", kwargs={"username": video.owner.username}
-                )
-            )
-        ],
-        "type": "Video",
-        **video_name(video),
-        **video_duration(video),
-        **video_uuid(video),
-        **video_views(video),
-        **video_transcoding(video),
-        **video_comments(video),
-        **video_download(video),
-        **video_dates(video),
-        **video_tags(video),
-        **video_urls(video),
-        **video_attributions(video),
-        **video_sensitivity(video),
-        **video_likes(video),
-        **video_shares(video),
-        **video_category(video),
-        **video_state(video),
-        **video_support(video),
-        **video_preview(video),
-        **video_live(video),
-        **video_subtitles(video),
-        **video_chapters(video),
-        **video_licences(video),
-        **video_language(video),
-        **video_description(video),
-        **video_icon(video),
+        **video_to_ap_payload(video),
     }
-
     logger.warning(f"video response: {response}")
     return JsonResponse(response, status=200)
 
@@ -420,7 +361,7 @@ def channel(request, slug):
         # needed by peertube
         "url": ap_url(reverse("activitypub:channel", kwargs={"slug": slug})),
         "name": channel.title,
-        "endpoints": {"sharedInbox": inbox},
+        "endpoints": {"sharedInbox": inbox_url},
         # needed by peertube
         "publicKey": {
             "id": f"{instance_actor_url}#main-key",

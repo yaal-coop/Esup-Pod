@@ -1,6 +1,7 @@
-from django.test import TestCase
-import httmock
 import json
+
+import httmock
+from django.test import TestCase
 
 
 class ActivityPubTestCase(TestCase):
