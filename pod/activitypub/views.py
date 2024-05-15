@@ -22,6 +22,7 @@ from .constants import (
     INSTANCE_ACTOR_ID,
 )
 from .tasks import task_send_accept_request
+from .tasks import task_read_announce
 from .serialization import (
     video_attributions,
     video_category,
@@ -135,7 +136,9 @@ def account(request, username=None):
         "followers": ap_url(reverse("activitypub:followers", kwargs=url_args)),
         "inbox": ap_url(reverse("activitypub:inbox", kwargs=url_args)),
         "outbox": ap_url(reverse("activitypub:outbox", kwargs=url_args)),
-        "endpoints": {"sharedInbox": ap_url(reverse("activitypub:inbox", kwargs=url_args))},
+        "endpoints": {
+            "sharedInbox": ap_url(reverse("activitypub:inbox", kwargs=url_args))
+        },
         "publicKey": {
             "id": f"{instance_actor_url}#main-key",
             "owner": instance_actor_url,
@@ -205,6 +208,9 @@ def inbox(request, username=None):
         follower = Following.objects.get(object=obj)
         follower.status = Following.Status.REFUSED
         follower.save()
+
+    elif not username and data["type"] == "Announce":
+        task_read_announce.delay(actor=data["actor"], object_id=data["object"])
 
     else:
         logger.warning(f"... ignoring: {data}")

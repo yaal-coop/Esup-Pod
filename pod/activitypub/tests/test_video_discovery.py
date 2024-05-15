@@ -15,3 +15,5 @@ class VideoDiscoveryTest(ActivityPubTestCase):
             video.ap_id
             == "http://peertube.test/videos/watch/dc6d7e53-9acc-45ca-ac3e-adac05c4bb77"
         )
+
+        # TODO: implement the rest of the test
