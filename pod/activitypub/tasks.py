@@ -49,14 +49,14 @@ def task_read_announce(self, actor, object_id):
 
 
 @activitypub_app.task(bind=True)
-def task_update_video(self, video):
-    from .network import update_video
+def task_external_video_update(self, video):
+    from .network import external_video_update
 
-    return update_video(video)
+    return external_video_update(video)
 
 
 @activitypub_app.task(bind=True)
-def task_delete_video(self, object_id):
-    from .network import delete_video
+def task_external_video_deletion(self, object_id):
+    from .network import external_video_deletion
 
-    return delete_video(object_id)
+    return external_video_deletion(object_id)
