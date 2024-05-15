@@ -12,6 +12,46 @@ def ap_video_to_external_video(payload):
     return ExternalVideo.objects.create()
 
 
+def video_to_ap_payload(video):
+    return {
+        "id": ap_url(reverse("activitypub:video", kwargs={"slug": video.slug})),
+        "to": ["https://www.w3.org/ns/activitystreams#Public"],
+        "cc": [
+            ap_url(
+                reverse(
+                    "activitypub:followers", kwargs={"username": video.owner.username}
+                )
+            )
+        ],
+        "type": "Video",
+        **video_name(video),
+        **video_duration(video),
+        **video_uuid(video),
+        **video_views(video),
+        **video_transcoding(video),
+        **video_comments(video),
+        **video_download(video),
+        **video_dates(video),
+        **video_tags(video),
+        **video_urls(video),
+        **video_attributions(video),
+        **video_sensitivity(video),
+        **video_likes(video),
+        **video_shares(video),
+        **video_category(video),
+        **video_state(video),
+        **video_support(video),
+        **video_preview(video),
+        **video_live(video),
+        **video_subtitles(video),
+        **video_chapters(video),
+        **video_licences(video),
+        **video_language(video),
+        **video_description(video),
+        **video_icon(video),
+    }
+
+
 def video_name(video):
     return {"name": video.title}
 

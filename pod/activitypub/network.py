@@ -5,11 +5,12 @@ import logging
 import requests
 from django.urls import reverse
 
+from pod.video.models import Video
+
 from .constants import AP_DEFAULT_CONTEXT, BASE_HEADERS
 from .models import Follower, Following
-from .utils import ap_url, signed_payload_headers
 from .serialization import ap_video_to_external_video
-from pod.video.models import Video
+from .utils import ap_url, signed_payload_headers
 
 logger = logging.getLogger(__name__)
 
@@ -151,15 +152,87 @@ def external_video_deletion(object_id):
 
 
 def broadcast_local_video_creation(video_id):
-    logger.warning("TODO: Broadcast Video creation")
     video = Video.objects.get(id=video_id)
+
+    # TODO: maybe delegate in subtasks for better performance?
+    for follower in Follower.objects.all():
+        send_video_announce_object(video, follower)
 
 
 def broadcast_local_video_update(video_id):
-    logger.warning("TODO: Broadcast Video update")
     video = Video.objects.get(id=video_id)
+
+    # TODO: maybe delegate in subtasks for better performance?
+    for follower in Follower.objects.all():
+        send_video_update_object(video, follower)
 
 
 def broadcast_local_video_deletion(video_id):
-    logger.warning("TODO: Broadcast Video deletion")
     video = Video.objects.get(id=video_id)
+
+    # TODO: maybe delegate in subtasks for better performance?
+    for follower in Follower.objects.all():
+        send_video_delete_object(video, follower)
+
+
+def send_video_announce_object(video, follower):
+    # TODO: save the inbox for better performance?
+    actor_account = requests.get(follower.actor, headers=BASE_HEADERS).json()
+    inbox = actor_account["inbox"]
+
+    payload = {
+        # TODO
+    }
+    signature_headers = signed_payload_headers(payload, inbox)
+    response = requests.post(
+        inbox, json=payload, headers={**BASE_HEADERS, **signature_headers}
+    )
+    return response.status_code == 204
+
+
+def send_video_update_object(video, follower):
+    # TODO: save the inbox for better performance?
+    actor_account = requests.get(follower.actor, headers=BASE_HEADERS).json()
+    inbox = actor_account["inbox"]
+
+    payload = {
+        # TODO
+    }
+    signature_headers = signed_payload_headers(payload, inbox)
+    response = requests.post(
+        inbox, json=payload, headers={**BASE_HEADERS, **signature_headers}
+    )
+    return response.status_code == 204
+
+
+def send_video_delete_object(video, follower):
+    # TODO: save the inbox for better performance?
+    actor_account = requests.get(follower.actor, headers=BASE_HEADERS).json()
+    inbox = actor_account["inbox"]
+
+    video_ap_url = ap_url(reverse("activitypub:video", kwargs={"slug": video.slug}))
+    owner_ap_url = ap_url(
+        reverse("activitypub:account", kwargs={"username": video.owner.username})
+    )
+    payload = {
+        "@context": AP_DEFAULT_CONTEXT,
+        "to": [
+            "https://www.w3.org/ns/activitystreams#Public",
+            ap_url(reverse("activitypub:followers")),
+            ap_url(
+                reverse(
+                    "activitypub:followers", kwargs={"username": video.owner.username}
+                )
+            ),
+        ],
+        "cc": [],
+        "type": "Delete",
+        "id": video_ap_url + "/delete",
+        "actor": owner_ap_url,
+        "object": video_ap_url,
+    }
+    signature_headers = signed_payload_headers(payload, inbox)
+    response = requests.post(
+        inbox, json=payload, headers={**BASE_HEADERS, **signature_headers}
+    )
+    return response.status_code == 204
