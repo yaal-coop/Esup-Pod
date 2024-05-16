@@ -41,6 +41,12 @@ Here is what happens when two instances, say *Node A* and *Node B* (being Pod or
 - A user of Node B deletes a `Video`
 - Node B sends a `Delete` activity on the `inbox` of all its `Followers`, including Node A with the ID of the new video.
 
+## Implementation
+
+The ActivityPub implementation tries to replicate the network messages of Peertube.
+There may be things that could have been done differently while still following the ActivityPub specs, but changing the network exchanges would require checking if the Peertube compatibility is not broken.
+This is due to Peertube having a few undocumented behaviors that are not exactly part of the AP specs.
+
 ## Limitations
 
 - Peertube instance will only be able to federate with a Pod instance if the video thumbnails are in JPG format.
@@ -126,3 +132,17 @@ The `DOCKER_ENV` environment var should be set to `full` so a peertube instance 
 The pod `Site` must be set on `pod.localhost:9090` in the [admin pannel](http://pod.localhost:9090/admin/sites/site/1/change/) (instead of `localhost:9090`).
 
 Then peertube is available at http://peertube.localhost:9000, and the address to be used for pod is http://pod.localhost:9090
+
+### Federate Peertube with Pod
+
+- Sign in with the `root` account
+- Go to [Main menu > Administration > Federation](http://peertube.localhost:9000/admin/follows/following-list) > Follow
+- Open the *Follow* modal and type `pod.localhost:9090`
+
+### Federate Pod with Peertube
+
+- Sign in with `admin`
+- Go to the [Administration pannel > Followings](http://pod.localhost:9090/admin/activitypub/following/) > Add following
+- Type `http://peertube.localhost:9000` in *Object* and save
+- On the [Followings list](http://pod.localhost:9090/admin/activitypub/following/) select the new object, and select `Send the federation request` in the action list, refresh.
+- If the status is *Following request accepted* then select the object again, and choose `Reindex instance videos` in the action list.
