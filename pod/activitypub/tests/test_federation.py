@@ -136,3 +136,20 @@ class ActivityPubViewTest(ActivityPubTestCase):
 
         follower = Follower.objects.get()
         assert follower.actor == "http://peertube.test/accounts/peertube"
+
+    def test_unfollow(self):
+        """Test that a Undo Follow request returns a 204, and remove the follower from the database"""
+        follower = Follower(actor="http://peertube.test/accounts/peertube")
+        follower.save()
+
+        with open("pod/activitypub/tests/fixtures/undo.json") as fd:
+            payload = json.load(fd)
+
+        response = self.client.post(
+            "/ap/inbox",
+            json.dumps(payload),
+            content_type="application/json",
+            **self.headers,
+        )
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(Follower.objects.all().count(), 0)

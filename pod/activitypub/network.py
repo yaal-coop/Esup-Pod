@@ -41,7 +41,7 @@ def get_instance_application_account_metadata(domain):
     return ap_actor
 
 
-def handle_inbox_follow(ap_follow):
+def handle_incoming_follow(ap_follow):
     # TODO: test double follows
     actor_account = ap_object(ap_follow["actor"])
     inbox = actor_account["inbox"]
@@ -61,6 +61,10 @@ def handle_inbox_follow(ap_follow):
     }
     response = ap_post(inbox, payload)
     return response.status_code == 204
+
+
+def handle_incoming_unfollow(ap_follow):
+    Follower.objects.filter(actor=ap_follow["actor"]).delete()
 
 
 def send_follow_request(following: Following):
