@@ -4,7 +4,6 @@ import json
 import logging
 from urllib.parse import urlparse
 
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
@@ -18,10 +17,11 @@ from .constants import (
     AP_PT_CHANNEL_CONTEXT,
     AP_PT_CHAPTERS_CONTEXT,
     AP_PT_VIDEO_CONTEXT,
-    INSTANCE_ACTOR_ID,
 )
 from .models import Following
-from .serialization import video_to_ap_payload
+from .serialization.account import account_to_ap_payload
+from .serialization.channel import channel_to_ap_payload
+from .serialization.video import video_to_ap_payload
 from .tasks import (
     task_external_video_deletion,
     task_external_video_update,
@@ -97,54 +97,17 @@ def account(request, username=None):
     'Person' or 'Application' description as defined by ActivityStreams.
 
     https://www.w3.org/TR/activitystreams-vocabulary/#dfn-person
+    https://www.w3.org/TR/activitystreams-vocabulary/#dfn-application
     """
+    user = get_object_or_404(User, username=username) if username else None
 
-    url_args = {"username": username} if username else {}
-    instance_actor_url = ap_url(reverse("activitypub:account"))
     context = (
-        AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT] if username else AP_DEFAULT_CONTEXT
+        AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT] if user else AP_DEFAULT_CONTEXT
     )
-    account_type = "Person" if username else "Application"
     response = {
         "@context": context,
-        "type": account_type,
-        "id": ap_url(reverse("activitypub:account", kwargs=url_args)),
-        "url": ap_url(reverse("activitypub:account", kwargs=url_args)),
-        "following": ap_url(reverse("activitypub:following", kwargs=url_args)),
-        "followers": ap_url(reverse("activitypub:followers", kwargs=url_args)),
-        "inbox": ap_url(reverse("activitypub:inbox", kwargs=url_args)),
-        "outbox": ap_url(reverse("activitypub:outbox", kwargs=url_args)),
-        "endpoints": {
-            "sharedInbox": ap_url(reverse("activitypub:inbox", kwargs=url_args))
-        },
-        "publicKey": {
-            "id": f"{instance_actor_url}#main-key",
-            "owner": instance_actor_url,
-            "publicKeyPem": settings.ACTIVITYPUB_PUBLIC_KEY,
-        },
+        **account_to_ap_payload(user),
     }
-
-    if username:
-        user = get_object_or_404(User, username=username)
-        response["preferredUsername"] = user.username
-        response["name"] = user.get_full_name() or user.username
-        response["summary"] = user.owner.commentaire
-
-        if user.owner.userpicture:
-            response["icon"] = [
-                {
-                    "type": "Image",
-                    "url": ap_url(user.owner.userpicture.file.url),
-                    "height": user.owner.userpicture.file.width,
-                    "width": user.owner.userpicture.file.height,
-                    "mediaType": user.owner.userpicture.file_type,
-                },
-            ]
-
-    else:
-        response["name"] = INSTANCE_ACTOR_ID
-        response["preferredUsername"] = INSTANCE_ACTOR_ID
-
     logger.warning(f"account response: {response}")
     return JsonResponse(response, status=200)
 
@@ -340,73 +303,12 @@ def channel(request, slug):
     https://www.w3.org/TR/activitystreams-vocabulary/#dfn-group
     https://docs.joinpeertube.org/api/activitypub
     """
-
     channel = get_object_or_404(Channel, slug=slug)
-    instance_actor_url = ap_url(reverse("activitypub:account"))
-    inbox_url = ap_url(reverse("activitypub:channel", kwargs={"slug": slug})) + "/inbox"
-    # https://github.com/Chocobozzz/PeerTube/blob/8da3e2e9b8229215e3eeb030b491a80cf37f889d/server/core/helpers/custom-validators/activitypub/actor.ts#L62
+
     response = {
         "@context": AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT],
-        "type": "Group",
-        "id": ap_url(reverse("activitypub:channel", kwargs={"slug": slug})),
-        # "following": "https://tube.aquilenet.fr/video-channels/USER_channel/following",
-        # "followers": "https://tube.aquilenet.fr/video-channels/USER_channel/followers",
-        # "playlists": "https://tube.aquilenet.fr/video-channels/USER_channel/playlists",
-        # needed by peertube
-        # this is a fake URL and is not intented to be reached
-        "inbox": inbox_url,
-        # "outbox": "https://tube.aquilenet.fr/video-channels/USER_channel/outbox",
-        # needed by peertube, seems to not support spaces
-        "preferredUsername": channel.slug,
-        # needed by peertube
-        "url": ap_url(reverse("activitypub:channel", kwargs={"slug": slug})),
-        "name": channel.title,
-        "endpoints": {"sharedInbox": inbox_url},
-        # needed by peertube
-        "publicKey": {
-            "id": f"{instance_actor_url}#main-key",
-            "owner": instance_actor_url,
-            "publicKeyPem": settings.ACTIVITYPUB_PUBLIC_KEY,
-        },
-        # "published": "2020-11-29T21:53:21.363Z",
-        # "icon": [
-        #    {
-        #        "type": "Image",
-        #        "mediaType": "image/png",
-        #        "height": 48,
-        #        "width": 48,
-        #        "url": "https://tube.aquilenet.fr/lazy-static/avatars/e904f75e-917b-41da-97b6-0ec5d8d59990.png",
-        #    },
-        #    {
-        #        "type": "Image",
-        #        "mediaType": "image/png",
-        #        "height": 120,
-        #        "width": 120,
-        #        "url": "https://tube.aquilenet.fr/lazy-static/avatars/e54d9c61-7c69-4ea9-9e22-0cd8b6847caf.png",
-        #    },
-        # ],
-        "summary": channel.description,
-        # "support": None,
-        # needed by peertube
-        "attributedTo": [
-            {
-                "type": "Person",
-                "id": ap_url(
-                    reverse("activitypub:account", kwargs={"username": owner.username})
-                ),
-            }
-            for owner in channel.owners.all()
-        ],
+        **channel_to_ap_payload(channel),
     }
-
-    if channel.headband:
-        response["image"] = {
-            "type": "Image",
-            "url": channel.headband.file.url,
-            # "height": 317,
-            # "width": 1920,
-            "mediaType": channel.headband.file_type,
-        }
 
     logger.warning(f"video response: {response}")
     return JsonResponse(response, status=200)
@@ -496,7 +398,6 @@ def chapters(request, slug):
     """
 
     video = get_object_or_404(Video, slug=slug)
-    # TODO: video.chapters
     response = {
         "@context": AP_DEFAULT_CONTEXT + [AP_PT_CHAPTERS_CONTEXT],
         "id": ap_url(reverse("activitypub:comments", kwargs={"slug": video.slug})),
