@@ -67,7 +67,7 @@ def video_uuid(video):
     """needed by peertube in version 4 exactly
     https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L76
     """
-    return {"uuid": stable_uuid(video.id, version=4)}
+    return {"uuid": str(stable_uuid(video.id, version=4))}
 
 
 def video_views(video):
