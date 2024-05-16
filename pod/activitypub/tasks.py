@@ -43,9 +43,9 @@ def task_index_videos(following_id):
 
 @activitypub_app.task()
 def task_handle_inbox_follow(username, data):
-    from .network import handle_inbox_follow
+    from .network import handle_incoming_follow
 
-    return handle_inbox_follow(ap_follow=data)
+    return handle_incoming_follow(ap_follow=data)
 
 
 @activitypub_app.task()
@@ -117,6 +117,19 @@ def task_handle_inbox_delete(username, data):
         return external_video_deletion(ap_video=obj)
 
     logger.debug("Ignoring inbox 'Delete' action for '%s' object", obj["type"])
+
+
+@activitypub_app.task()
+def task_handle_inbox_undo(username, data):
+    from pod.activitypub.utils import ap_object
+
+    from .network import handle_incoming_unfollow
+
+    obj = ap_object(data["object"])
+    if obj["type"] == "Follow":
+        return handle_incoming_unfollow(ap_follow=obj)
+
+    logger.debug("Ignoring inbox 'Undo' action for '%s' object", obj["type"])
 
 
 @activitypub_app.task()
