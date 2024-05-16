@@ -2,11 +2,13 @@ import base64
 import email.utils
 import hashlib
 import json
+import logging
 import random
 import uuid
 from collections import namedtuple
 from urllib.parse import urlencode, urlparse, urlunparse
 
+import requests
 from Crypto.Hash import SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
@@ -14,6 +16,11 @@ from django.conf import settings
 from django.contrib.sites.models import Site
 from django.urls import reverse
 
+from pod.video.models import Video
+
+from .constants import AP_REQUESTS_TIMEOUT, BASE_HEADERS
+
+logger = logging.getLogger(__name__)
 URLComponents = namedtuple(
     typename="URLComponents",
     field_names=["scheme", "netloc", "url", "path", "query", "fragment"],
@@ -89,13 +96,14 @@ def signed_payload_headers(payload, url):
 
 def stable_uuid(seed, version=None):
     """Always returns the same UUID given the same input string."""
+
     full_seed = str(seed) + settings.SECRET_KEY
     m = hashlib.md5()
     m.update(full_seed.encode("utf-8"))
     return uuid.UUID(m.hexdigest(), version=version)
 
 
-def make_magnet_url(video, mp4):
+def make_magnet_url(video: Video, mp4):
     uuid = stable_uuid(video.id, version=4)
     fake_hash = "".join(
         random.choice("0123456789abcdefghijklmnopqrstuvwxyz") for _ in range(40)
@@ -119,3 +127,35 @@ def make_magnet_url(video, mp4):
         netloc="",
         params=payload,
     )
+
+
+def ap_object(obj):
+    """If obj is actually a link to a distant object, perform the request to get the object."""
+
+    if isinstance(obj, str):
+        result = requests.get(
+            obj, headers=BASE_HEADERS, timeout=AP_REQUESTS_TIMEOUT
+        ).json()
+        logger.debug(
+            "Read from AP endpoint: %s\n%s", obj, json.dumps(result, indent=True)
+        )
+        return result
+    return obj
+
+
+def ap_post(url, payload, **kwargs):
+    logger.debug(
+        "Posting to AP endpoint: %s\n%s", url, json.dumps(payload, indent=True)
+    )
+
+    signature_headers = signed_payload_headers(payload, url)
+    headers = kwargs.pop("headers", {})
+    timeout = kwargs.pop("timeout", AP_REQUESTS_TIMEOUT)
+    response = requests.post(
+        url,
+        json=payload,
+        headers={**BASE_HEADERS, **signature_headers, **headers},
+        timeout=timeout,
+        **kwargs,
+    )
+    return response

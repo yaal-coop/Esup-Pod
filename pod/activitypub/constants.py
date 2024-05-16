@@ -1,3 +1,4 @@
+AP_REQUESTS_TIMEOUT = 60
 AP_DEFAULT_CONTEXT = [
     "https://www.w3.org/ns/activitystreams",
     "https://w3id.org/security/v1",
