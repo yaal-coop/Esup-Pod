@@ -165,7 +165,7 @@ def video_urls(video):
                 }
                 for mp4 in video.get_video_mp4()
             ]
-        ),
+        )
     }
 
 
@@ -190,14 +190,15 @@ def video_attributions(video):
                     )
                 ),
             },
-            {
-                "type": "Group",
-                "id": ap_url(
-                    reverse(
-                        "activitypub:account", kwargs={"username": video.owner.username}
-                    )
-                ),
-            },
+            # We should fake a default channel for every videos
+            #            {
+            #                "type": "Group",
+            #                "id": ap_url(
+            #                    reverse(
+            #                        "activitypub:account", kwargs={"username": video.owner.username}
+            #                    )
+            #                ),
+            #            },
         ]
         + [
             {
