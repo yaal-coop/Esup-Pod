@@ -7,10 +7,11 @@ from django.urls import reverse
 
 from pod.video.models import Video
 
-from .constants import AP_DEFAULT_CONTEXT, BASE_HEADERS
+from .constants import AP_DEFAULT_CONTEXT, BASE_HEADERS, AP_PT_VIDEO_CONTEXT
 from .models import Follower, Following
 from .serialization import ap_video_to_external_video
 from .utils import ap_url, signed_payload_headers
+from .serialization import video_to_ap_payload
 
 logger = logging.getLogger(__name__)
 
@@ -180,8 +181,31 @@ def send_video_announce_object(video, follower):
     actor_account = requests.get(follower.actor, headers=BASE_HEADERS).json()
     inbox = actor_account["inbox"]
 
+    video_ap_url = ap_url(reverse("activitypub:video", kwargs={"slug": video.slug}))
+    owner_ap_url = ap_url(
+        reverse("activitypub:account", kwargs={"username": video.owner.username})
+    )
+
     payload = {
-        # TODO
+        "@context": [
+            "https://www.w3.org/ns/activitystreams",
+            "https://w3id.org/security/v1",
+            {"RsaSignature2017": "https://w3id.org/security#RsaSignature2017"},
+        ],
+        "to": [
+            "https://www.w3.org/ns/activitystreams#Public",
+            ap_url(reverse("activitypub:followers")),
+            ap_url(
+                reverse(
+                    "activitypub:followers", kwargs={"username": video.owner.username}
+                )
+            ),
+        ],
+        "cc": [],
+        "type": "Announce",
+        "id": f"{video_ap_url}/announces/1",
+        "actor": owner_ap_url,
+        "object": video_ap_url,
     }
     signature_headers = signed_payload_headers(payload, inbox)
     response = requests.post(
@@ -195,8 +219,28 @@ def send_video_update_object(video, follower):
     actor_account = requests.get(follower.actor, headers=BASE_HEADERS).json()
     inbox = actor_account["inbox"]
 
+    video_ap_url = ap_url(reverse("activitypub:video", kwargs={"slug": video.slug}))
+    owner_ap_url = ap_url(
+        reverse("activitypub:account", kwargs={"username": video.owner.username})
+    )
+
     payload = {
-        # TODO
+        "@context": AP_DEFAULT_CONTEXT + [AP_PT_VIDEO_CONTEXT],
+        "to": ["https://www.w3.org/ns/activitystreams#Public"],
+        "cc": [
+            ap_url(reverse("activitypub:followers")),
+            ap_url(
+                reverse(
+                    "activitypub:followers", kwargs={"username": video.owner.username}
+                )
+            ),
+        ],
+        "type": "Update",
+        "id": video_ap_url,
+        "actor": owner_ap_url,
+        "object": {
+            **video_to_ap_payload(video),
+        },
     }
     signature_headers = signed_payload_headers(payload, inbox)
     response = requests.post(
@@ -227,7 +271,7 @@ def send_video_delete_object(video, follower):
         ],
         "cc": [],
         "type": "Delete",
-        "id": video_ap_url + "/delete",
+        "id": f"{video_ap_url}/delete",
         "actor": owner_ap_url,
         "object": video_ap_url,
     }
