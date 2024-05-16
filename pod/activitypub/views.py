@@ -2,7 +2,6 @@
 
 import json
 import logging
-from urllib.parse import urlparse
 
 from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
@@ -18,15 +17,16 @@ from .constants import (
     AP_PT_CHAPTERS_CONTEXT,
     AP_PT_VIDEO_CONTEXT,
 )
-from .models import Following
 from .serialization.account import account_to_ap_payload
 from .serialization.channel import channel_to_ap_payload
 from .serialization.video import video_to_ap_payload
 from .tasks import (
-    task_external_video_deletion,
-    task_external_video_update,
-    task_read_announce,
-    task_send_accept_request,
+    task_handle_inbox_accept,
+    task_handle_inbox_announce,
+    task_handle_inbox_delete,
+    task_handle_inbox_follow,
+    task_handle_inbox_reject,
+    task_handle_inbox_update,
 )
 from .utils import ap_url
 
@@ -58,7 +58,7 @@ def nodeinfo(request):
             },
         ]
     }
-    logger.warning(f"nodeinfo response: {response}")
+    logger.debug("nodeinfo response: %s", json.dumps(response, indent=True))
     return JsonResponse(response, status=200)
 
 
@@ -87,7 +87,7 @@ def webfinger(request):
                 }
             ],
         }
-        logger.warning(f"webfinger response: {response}")
+        logger.debug("webfinger response: %s", json.dumps(response, indent=True))
         return JsonResponse(response, status=200)
 
 
@@ -108,7 +108,7 @@ def account(request, username=None):
         "@context": context,
         **account_to_ap_payload(user),
     }
-    logger.warning(f"account response: {response}")
+    logger.debug("account response: %s", json.dumps(response, indent=True))
     return JsonResponse(response, status=200)
 
 
@@ -120,49 +120,31 @@ def inbox(request, username=None):
     """
 
     data = json.loads(request.body.decode()) if request.body else None
-    logger.warning(f"inbox query: {data}")
-    # TODO: reject invalid objects
-    # TODO: test double follows
+    logger.info("inbox query: %s", json.dumps(data, indent=True))
     # TODO: test HTTP signature
 
     if not username and data["type"] == "Follow":
-        task_send_accept_request.delay(
-            follow_actor=data["actor"],
-            follow_object=data["object"],
-            follow_id=data["id"],
-        )
+        task_handle_inbox_follow.delay(username, data)
 
-    elif (
-        not username and data["type"] == "Accept" and data["object"]["type"] == "Follow"
-    ):
-        parsed = urlparse(data["object"]["object"])
-        obj = f"{parsed.scheme}://{parsed.netloc}"
-        follower = Following.objects.get(object=obj)
-        follower.status = Following.Status.ACCEPTED
-        follower.save()
+    elif not username and data["type"] == "Accept":
+        task_handle_inbox_accept.delay(username, data)
 
-    elif (
-        not username and data["type"] == "Reject" and data["object"]["type"] == "Follow"
-    ):
-        parsed = urlparse(data["object"]["object"])
-        obj = f"{parsed.scheme}://{parsed.netloc}"
-        follower = Following.objects.get(object=obj)
-        follower.status = Following.Status.REFUSED
-        follower.save()
+    elif not username and data["type"] == "Reject":
+        task_handle_inbox_reject.delay(username, data)
 
     elif not username and data["type"] == "Announce":
-        task_read_announce.delay(actor=data["actor"], object_id=data["object"])
+        task_handle_inbox_announce.delay(username, data)
 
-    elif (
-        not username and data["type"] == "Update" and data["object"]["type"] == "Video"
-    ):
-        task_external_video_update.delay(video=data["object"])
+    elif not username and data["type"] == "Update":
+        task_handle_inbox_update.delay(username, data)
 
     elif not username and data["type"] == "Delete":
-        task_external_video_deletion.delay(object_id=data["object"])
+        task_handle_inbox_delete.delay(username, data)
+
+    #TODO: handle 'Undo'
 
     else:
-        logger.warning(f"... ignoring: {data}")
+        logger.debug("Ignoring inbox action: %s", data["type"])
 
     return HttpResponse(status=204)
 
@@ -235,7 +217,7 @@ def outbox(request, username=None):
             "totalItems": 0,
         }
 
-    logger.warning(f"outbox response: {response}")
+    logger.debug("outbox response: %s", json.dumps(response, indent=True))
     return JsonResponse(response, status=200)
 
 
@@ -254,7 +236,7 @@ def following(request, username=None):
         "type": "OrderedCollection",
         "totalItems": 0,
     }
-    logger.warning(f"following response: {response}")
+    logger.debug("following response: %s", json.dumps(response, indent=True))
     return JsonResponse(response, status=200)
 
 
@@ -273,7 +255,7 @@ def followers(request, username=None):
         "type": "OrderedCollection",
         "totalItems": 0,
     }
-    logger.warning(f"followers response: {response}")
+    logger.debug("followers response: %s", json.dumps(response, indent=True))
     return JsonResponse(response, status=200)
 
 
@@ -291,7 +273,7 @@ def video(request, slug):
         "@context": AP_DEFAULT_CONTEXT + [AP_PT_VIDEO_CONTEXT],
         **video_to_ap_payload(video),
     }
-    logger.warning(f"video response: {response}")
+    logger.debug("video response: %s", json.dumps(response, indent=True))
     return JsonResponse(response, status=200)
 
 
@@ -310,7 +292,7 @@ def channel(request, slug):
         **channel_to_ap_payload(channel),
     }
 
-    logger.warning(f"video response: {response}")
+    logger.debug("video response: %s", json.dumps(response, indent=True))
     return JsonResponse(response, status=200)
 
 
