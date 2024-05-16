@@ -132,7 +132,7 @@ class ActivityPubViewTest(ActivityPubTestCase):
                 },
             }
             inbox_url = "http://peertube.test/accounts/peertube/inbox"
-            post.assert_called_with(inbox_url, json=expected, headers=mock.ANY)
+            post.assert_called_with(inbox_url, json=expected, headers=mock.ANY, timeout=mock.ANY)
 
         follower = Follower.objects.get()
         assert follower.actor == "http://peertube.test/accounts/peertube"
