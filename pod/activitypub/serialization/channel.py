@@ -121,18 +121,22 @@ def channel_attributed_to(channel):
 
 
 def channel_image(channel):
-    return {
-        "image": {
-            "type": "Image",
-            "url": channel.headband.file.url,
-            "height": channel.headband.file.height,
-            "width": channel.headband.file.width,
-            "mediaType": channel.headband.file_type,
+    if channel.headband:
+        return {
+            "image": {
+                "type": "Image",
+                "url": channel.headband.file.url,
+                "height": channel.headband.file.height,
+                "width": channel.headband.file.width,
+                "mediaType": channel.headband.file_type,
+            }
         }
-    }
+    return {}
 
 
 def channel_summary(channel):
-    return {
-        "summary": channel.description,
-    }
+    if channel.description:
+        return {
+            "summary": channel.description,
+        }
+    return {}
