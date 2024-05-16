@@ -1,35 +1,27 @@
 """Long-standing operations"""
 
 import logging
+from urllib.parse import urlparse
 
 import requests
 from django.urls import reverse
 
+from pod.activitypub.utils import ap_object
 from pod.video.models import Video
 
 from .constants import AP_DEFAULT_CONTEXT, AP_PT_VIDEO_CONTEXT, BASE_HEADERS
 from .models import Follower, Following
-from .serialization.video import ap_video_to_external_video
-from .serialization.video import video_to_ap_payload
-from .utils import ap_url, signed_payload_headers
+from .serialization.video import ap_video_to_external_video, video_to_ap_payload
+from .utils import ap_post, ap_url
 
 logger = logging.getLogger(__name__)
 
 
-def follow(following_id):
-    following = Following.objects.get(id=following_id)
-
-    metadata = get_instance_application_account_metadata(following.object)
-    return send_follow_request(following, metadata)
-
-
-def index_videos(following_id):
-    following = Following.objects.get(id=following_id)
-
-    metadata = get_instance_application_account_metadata(following.object)
-    outbox_content = requests.get(metadata["outbox"], headers=BASE_HEADERS).json()
-    if "first" in outbox_content:
-        index_videos_page(following, outbox_content["first"])
+def index_videos(following: Following):
+    ap_actor = get_instance_application_account_metadata(following.object)
+    ap_outbox = ap_object(ap_actor["outbox"])
+    if "first" in ap_outbox:
+        index_videos_page(following, ap_outbox["first"])
     return True
 
 
@@ -45,35 +37,34 @@ def get_instance_application_account_url(url):
 
 def get_instance_application_account_metadata(domain):
     account_url = get_instance_application_account_url(domain)
-    response = requests.get(account_url, headers=BASE_HEADERS)
-    return response.json()
+    ap_actor = ap_object(account_url)
+    return ap_actor
 
 
-def send_accept_request(follow_actor, follow_object, follow_id):
-    actor_account = requests.get(follow_actor, headers=BASE_HEADERS).json()
+def handle_inbox_follow(ap_follow):
+    # TODO: test double follows
+    actor_account = ap_object(ap_follow["actor"])
     inbox = actor_account["inbox"]
 
-    follower, _ = Follower.objects.get_or_create(actor=follow_actor)
+    follower, _ = Follower.objects.get_or_create(actor=ap_follow["actor"])
     payload = {
         "@context": AP_DEFAULT_CONTEXT,
         "id": ap_url(f"/accepts/follows/{follower.id}"),
         "type": "Accept",
-        "actor": follow_object,
+        "actor": ap_follow["object"],
         "object": {
             "type": "Follow",
-            "id": follow_id,
-            "actor": follow_actor,
-            "object": follow_object,
+            "id": ap_follow["id"],
+            "actor": ap_follow["actor"],
+            "object": ap_follow["object"],
         },
     }
-    signature_headers = signed_payload_headers(payload, inbox)
-    response = requests.post(
-        inbox, json=payload, headers={**BASE_HEADERS, **signature_headers}
-    )
+    response = ap_post(inbox, payload)
     return response.status_code == 204
 
 
-def send_follow_request(following, metadata):
+def send_follow_request(following: Following):
+    ap_actor = get_instance_application_account_metadata(following.object)
     # TODO: handle rejects
     following_url = ap_url(reverse("activitypub:following"))
     payload = {
@@ -81,104 +72,60 @@ def send_follow_request(following, metadata):
         "type": "Follow",
         "id": f"{following_url}/{following.id}",
         "actor": ap_url(reverse("activitypub:account")),
-        "object": metadata["id"],
+        "object": ap_actor["id"],
     }
     logger.info(f"{payload}")
-    signature_headers = signed_payload_headers(payload, metadata["inbox"])
-    response = requests.post(
-        metadata["inbox"], json=payload, headers={**BASE_HEADERS, **signature_headers}
-    )
-
+    response = ap_post(ap_actor["inbox"], payload)
     following.status = Following.Status.REQUESTED
     following.save()
 
     return response.status_code == 204
 
 
-def index_videos_page(following, page_url):
+def index_videos_page(following: Following, page_url):
     """Parse a AP Video page payload, and handle each video."""
-    content = requests.get(page_url, headers=BASE_HEADERS).json()
-    for item in content["orderedItems"]:
+    ap_page = ap_object(page_url)
+    for item in ap_page["orderedItems"]:
         index_video(following, item["object"])
 
-    if "next" in content:
-        index_videos_page(following, content["next"])
+    if "next" in ap_page:
+        index_videos_page(following, ap_page["next"])
 
 
-def index_video(following, video_url):
+def index_video(following: Following, video_url):
     """Read a video payload and create an ExternalVideo object"""
-
-    payload = requests.get(video_url, headers=BASE_HEADERS).json()
-    logger.warning(f"TODO: Deal with video indexation {payload}")
-    extvideo = ap_video_to_external_video(payload)
+    ap_video = ap_object(video_url)
+    logger.warning(f"TODO: Deal with video indexation {ap_video}")
+    extvideo = ap_video_to_external_video(ap_video)
     extvideo.source_instance = following
     extvideo.save()
 
 
-def read_announce(actor, object_id):
-    actor_object = requests.get(actor, headers=BASE_HEADERS).json()
-    obj = requests.get(object_id, headers=BASE_HEADERS).json()
-
-    if obj["type"] != "Video":
-        logger.debug(f"Ignoring announce about {obj['type']}")
-        # TODO: Deal with other objects, like comments
-
+def external_video_added_by_actor(ap_video, ap_actor):
     # Announce for a Video created by a user account
-    if actor_object["type"] in ("Application", "Person"):
-        # TODO: create an ExternalVideo
-        logger.warning(f"TODO: Handle Video creation by {actor_object['type']}")
+    # TODO: create an ExternalVideo
+    logger.warning(f"TODO: Handle Video addition by {ap_actor['type']}")
 
+
+def external_video_added_by_channel(ap_video, ap_channel):
     # Announce for a Video added to a channel
-    elif actor_object["type"] in ("Group"):
-        # TODO: update the external video to add it to the matching channel
-        logger.warning(f"TODO: Handle Video creation by {actor_object['type']}")
-
-    else:
-        logger.debug(f"Ignoring Video creation by {actor_object['type']}")
+    # TODO: update the external video to add it to the matching channel
+    logger.warning("TODO: Handle Video additon on Channel")
 
 
-def external_video_update(video):
+def external_video_update(ap_video):
     # TODO: update the external video details
     logger.warning("TODO: Deal with Video updates")
 
 
-def external_video_deletion(object_id):
-    obj = requests.get(object_id, headers=BASE_HEADERS).json()
-
-    if obj["type"] != "Video":
-        logger.debug(f"Ignoring {obj['type']} deletion")
-
+def external_video_deletion(ap_video):
     # TODO: Delete the ExternalVideo
     logger.warning("TODO: Handle Video deletion")
 
 
-def broadcast_local_video_creation(video_id):
-    video = Video.objects.get(id=video_id)
-
-    # TODO: maybe delegate in subtasks for better performance?
-    for follower in Follower.objects.all():
-        send_video_announce_object(video, follower)
-
-
-def broadcast_local_video_update(video_id):
-    video = Video.objects.get(id=video_id)
-
-    # TODO: maybe delegate in subtasks for better performance?
-    for follower in Follower.objects.all():
-        send_video_update_object(video, follower)
-
-
-def broadcast_local_video_deletion(video_id):
-    video = Video.objects.get(id=video_id)
-
-    # TODO: maybe delegate in subtasks for better performance?
-    for follower in Follower.objects.all():
-        send_video_delete_object(video, follower)
-
-
-def send_video_announce_object(video, follower):
+def send_video_announce_object(video: Video, follower: Follower):
     # TODO: save the inbox for better performance?
-    actor_account = requests.get(follower.actor, headers=BASE_HEADERS).json()
+    actor_account = ap_object(follower.actor)
     inbox = actor_account["inbox"]
 
     video_ap_url = ap_url(reverse("activitypub:video", kwargs={"slug": video.slug}))
@@ -207,16 +154,13 @@ def send_video_announce_object(video, follower):
         "actor": owner_ap_url,
         "object": video_ap_url,
     }
-    signature_headers = signed_payload_headers(payload, inbox)
-    response = requests.post(
-        inbox, json=payload, headers={**BASE_HEADERS, **signature_headers}
-    )
+    response = ap_post(inbox, payload)
     return response.status_code == 204
 
 
-def send_video_update_object(video, follower):
+def send_video_update_object(video: Video, follower: Follower):
     # TODO: save the inbox for better performance?
-    actor_account = requests.get(follower.actor, headers=BASE_HEADERS).json()
+    actor_account = ap_object(follower.actor)
     inbox = actor_account["inbox"]
 
     video_ap_url = ap_url(reverse("activitypub:video", kwargs={"slug": video.slug}))
@@ -242,16 +186,13 @@ def send_video_update_object(video, follower):
             **video_to_ap_payload(video),
         },
     }
-    signature_headers = signed_payload_headers(payload, inbox)
-    response = requests.post(
-        inbox, json=payload, headers={**BASE_HEADERS, **signature_headers}
-    )
+    response = ap_post(inbox, payload)
     return response.status_code == 204
 
 
-def send_video_delete_object(video, follower):
+def send_video_delete_object(video: Video, follower: Follower):
     # TODO: save the inbox for better performance?
-    actor_account = requests.get(follower.actor, headers=BASE_HEADERS).json()
+    actor_account = ap_object(follower.actor)
     inbox = actor_account["inbox"]
 
     video_ap_url = ap_url(reverse("activitypub:video", kwargs={"slug": video.slug}))
@@ -275,8 +216,22 @@ def send_video_delete_object(video, follower):
         "actor": owner_ap_url,
         "object": video_ap_url,
     }
-    signature_headers = signed_payload_headers(payload, inbox)
-    response = requests.post(
-        inbox, json=payload, headers={**BASE_HEADERS, **signature_headers}
-    )
+
+    response = ap_post(inbox, payload)
     return response.status_code == 204
+
+
+def follow_request_accepted(ap_follow):
+    parsed = urlparse(ap_follow["object"])
+    obj = f"{parsed.scheme}://{parsed.netloc}"
+    follower = Following.objects.get(object=obj)
+    follower.status = Following.Status.ACCEPTED
+    follower.save()
+
+
+def follow_request_rejected(ap_follow):
+    parsed = urlparse(ap_follow["object"])
+    obj = f"{parsed.scheme}://{parsed.netloc}"
+    follower = Following.objects.get(object=obj)
+    follower.status = Following.Status.REFUSED
+    follower.save()
