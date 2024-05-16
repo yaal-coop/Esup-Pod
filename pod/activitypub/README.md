@@ -25,8 +25,31 @@ Here is what happens when two instances, say *Node A* and *Node B* (being Pod or
 
 ### Video creation and update sharing
 
-- Node B publishes, edit or remove a `Video`
-TBD
+#### Creation
+
+- A user of Node B publishes a `Video`
+- Node B sends a `Announce` activity on the `inbox` of all its `Followers`, including Node A with the ID of the new video.
+- Node A reads the information about the new `Video` on Node B video endpoint.
+
+#### Edition
+
+- A user of Node B edits a `Video`
+- Node B sends a `Update` activity on the `inbox` of all its `Followers`, including Node A with the ID of the new video, containing the details of the `Video`.
+
+#### Deletion
+
+- A user of Node B deletes a `Video`
+- Node B sends a `Delete` activity on the `inbox` of all its `Followers`, including Node A with the ID of the new video.
+
+## Limitations
+
+- Peertube instance will only be able to federate with a Pod instance if the video thumbnails are in JPG format.
+  png thumbnails are not supported at the moment (but that may come in the future).
+  [More details here](https://framacolibri.org/t/comments-and-suggestions-on-the-peertube-activitypub-implementation/21215).
+- The pod default `Site` must be exactly the URL accessed for ActivityPub endpoint to work as expected:
+  TODO: build URLs based on the current hostname instead of absolute URLs?
+- Peertube needs at least one Channel for each video for federation to work (this have low chances to evolve soon).
+  TODO: build a default channel for each user.
 
 ## Configuration
 
