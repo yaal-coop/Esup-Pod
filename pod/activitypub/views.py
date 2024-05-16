@@ -27,6 +27,7 @@ from .tasks import (
     task_handle_inbox_follow,
     task_handle_inbox_reject,
     task_handle_inbox_update,
+    task_handle_inbox_undo,
 )
 from .utils import ap_url
 
@@ -120,7 +121,7 @@ def inbox(request, username=None):
     """
 
     data = json.loads(request.body.decode()) if request.body else None
-    logger.info("inbox query: %s", json.dumps(data, indent=True))
+    logger.warning("inbox query: %s", json.dumps(data, indent=True))
     # TODO: test HTTP signature
 
     if not username and data["type"] == "Follow":
@@ -141,7 +142,8 @@ def inbox(request, username=None):
     elif not username and data["type"] == "Delete":
         task_handle_inbox_delete.delay(username, data)
 
-    #TODO: handle 'Undo'
+    elif not username and data["type"] == "Undo":
+        task_handle_inbox_undo.delay(username, data)
 
     else:
         logger.debug("Ignoring inbox action: %s", data["type"])
