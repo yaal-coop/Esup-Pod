@@ -75,7 +75,7 @@ print(activitypub_key.publickey().export_key().decode())
 
 The federation also needs celery to be configured with `ACTIVITYPUB_CELERY_BROKER_URL`.
 
-Here is a sample working activitypub config:
+Here is a sample working activitypub `pod/custom/settings_local.py`:
 
 ```python
 ACTIVITYPUB_CELERY_BROKER_URL = "redis://redis:6379/5"
