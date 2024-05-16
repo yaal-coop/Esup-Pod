@@ -1,6 +1,6 @@
 import json
 
-from pod.activitypub.serialization import ap_video_to_external_video
+from pod.activitypub.serialization.video import ap_video_to_external_video
 
 from . import ActivityPubTestCase
 

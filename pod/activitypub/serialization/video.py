@@ -2,9 +2,9 @@ from django.template.defaultfilters import slugify
 from django.urls import reverse
 from markdownify import markdownify
 
-from .constants import AP_LICENSE_MAPPING
-from .models import ExternalVideo
-from .utils import ap_url, make_magnet_url, stable_uuid
+from pod.activitypub.constants import AP_LICENSE_MAPPING
+from pod.activitypub.models import ExternalVideo
+from pod.activitypub.utils import ap_url, make_magnet_url, stable_uuid
 
 
 def ap_video_to_external_video(payload):
@@ -184,6 +184,14 @@ def video_attributions(video):
             # needed by peertube
             {
                 "type": "Person",
+                "id": ap_url(
+                    reverse(
+                        "activitypub:account", kwargs={"username": video.owner.username}
+                    )
+                ),
+            },
+            {
+                "type": "Group",
                 "id": ap_url(
                     reverse(
                         "activitypub:account", kwargs={"username": video.owner.username}

@@ -7,11 +7,11 @@ from django.urls import reverse
 
 from pod.video.models import Video
 
-from .constants import AP_DEFAULT_CONTEXT, BASE_HEADERS, AP_PT_VIDEO_CONTEXT
+from .constants import AP_DEFAULT_CONTEXT, AP_PT_VIDEO_CONTEXT, BASE_HEADERS
 from .models import Follower, Following
-from .serialization import ap_video_to_external_video
+from .serialization.video import ap_video_to_external_video
+from .serialization.video import video_to_ap_payload
 from .utils import ap_url, signed_payload_headers
-from .serialization import video_to_ap_payload
 
 logger = logging.getLogger(__name__)
 
