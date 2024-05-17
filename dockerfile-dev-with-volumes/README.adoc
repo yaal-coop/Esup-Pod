@@ -8,7 +8,7 @@ v1.2, 2023-08-30
 == Docker / docker compose avec volumes sur la machine hôte
 
 === Conteneur ElasticSearch
-http://localhost:9200
+http://elasticsearch.localhost:9200
 
 ==== elasticsearch:8.8.1
 ===== OS/ARCH
