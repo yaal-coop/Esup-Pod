@@ -12,6 +12,11 @@ urlpatterns = [
     path("ap/account/<str:username>", views.account, name="account"),
     path("ap/inbox", views.inbox, name="inbox"),
     path("ap/account/<str:username>/inbox", views.inbox, name="inbox"),
+    path(
+        "ap/account/<str:username>/channel",
+        views.account_channel,
+        name="account_channel",
+    ),
     path("ap/outbox", views.outbox, name="outbox"),
     path("ap/account/<str:username>/outbox", views.outbox, name="outbox"),
     path("ap/following", views.following, name="following"),
