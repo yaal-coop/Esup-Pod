@@ -21,7 +21,7 @@ class ActivityPubViewTest(ActivityPubTestCase):
                 {
                     "rel": "self",
                     "type": "application/activity+json",
-                    "href": "http://localhost:9090/ap",
+                    "href": "http://localhost:8000/ap",
                 },
             ],
         }
@@ -38,18 +38,18 @@ class ActivityPubViewTest(ActivityPubTestCase):
                 {"RsaSignature2017": "https://w3id.org/security#RsaSignature2017"},
             ],
             "type": "Application",
-            "id": "http://localhost:9090/ap",
-            "following": "http://localhost:9090/ap/following",
-            "followers": "http://localhost:9090/ap/followers",
-            "inbox": "http://localhost:9090/ap/inbox",
-            "outbox": "http://localhost:9090/ap/outbox",
-            "url": "http://localhost:9090/ap",
+            "id": "http://localhost:8000/ap",
+            "following": "http://localhost:8000/ap/following",
+            "followers": "http://localhost:8000/ap/followers",
+            "inbox": "http://localhost:8000/ap/inbox",
+            "outbox": "http://localhost:8000/ap/outbox",
+            "url": "http://localhost:8000/ap",
             "name": "pod",
             "preferredUsername": "pod",
-            "endpoints": {"sharedInbox": "http://localhost:9090/ap/inbox"},
+            "endpoints": {"sharedInbox": "http://localhost:8000/ap/inbox"},
             "publicKey": {
-                "id": "http://localhost:9090/ap#main-key",
-                "owner": "http://localhost:9090/ap",
+                "id": "http://localhost:8000/ap#main-key",
+                "owner": "http://localhost:8000/ap",
                 "publicKeyPem": mock.ANY,
             },
         }
@@ -97,7 +97,7 @@ class ActivityPubViewTest(ActivityPubTestCase):
             "type": "Follow",
             "id": "http://peertube.test/accounts/peertube/follows/4",
             "actor": "http://peertube.test/accounts/peertube",
-            "object": "http://localhost:9090/.well-known/peertube",
+            "object": "http://localhost:8000/.well-known/peertube",
             "signature": {
                 "type": "RsaSignature2017",
                 "creator": "http://peertube.test/accounts/peertube",
@@ -121,14 +121,14 @@ class ActivityPubViewTest(ActivityPubTestCase):
                     "https://w3id.org/security/v1",
                     {"RsaSignature2017": "https://w3id.org/security#RsaSignature2017"},
                 ],
-                "id": "http://localhost:9090/accepts/follows/1",
+                "id": "http://localhost:8000/accepts/follows/1",
                 "type": "Accept",
-                "actor": "http://localhost:9090/.well-known/peertube",
+                "actor": "http://localhost:8000/.well-known/peertube",
                 "object": {
                     "type": "Follow",
                     "id": "http://peertube.test/accounts/peertube/follows/4",
                     "actor": "http://peertube.test/accounts/peertube",
-                    "object": "http://localhost:9090/.well-known/peertube",
+                    "object": "http://localhost:8000/.well-known/peertube",
                 },
             }
             inbox_url = "http://peertube.test/accounts/peertube/inbox"

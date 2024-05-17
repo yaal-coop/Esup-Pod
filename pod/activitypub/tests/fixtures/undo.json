@@ -19,7 +19,7 @@
         "type": "Follow",
         "id": "http://peertube.test/accounts/peertube/follows/4",
         "actor": "http://peertube.test/accounts/peertube",
-        "object": "http://pod.localhost:9090/ap"
+        "object": "http://pod.localhost:8000/ap"
     },
     "signature": {
         "type": "RsaSignature2017",

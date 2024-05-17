@@ -1,6 +1,6 @@
 #!/bin/sh
 echo "Launching commands into pod-dev"
-until nc -z pod-back 9090; do echo waiting for pod-back; sleep 10; done;
+until nc -z pod-back 8000; do echo waiting for pod-back; sleep 10; done;
 # Worker ActivityPub
 env DJANGO_SETTINGS_MODULE=pod.settings \
     python -m watchdog.watchmedo auto-restart --directory pod --pattern '*.py' --recursive --\
