@@ -12,7 +12,7 @@ def ap_video_to_external_video(payload):
     return ExternalVideo.objects.create()
 
 
-def video_to_ap_payload(video):
+def video_to_ap_video(video):
     return {
         "id": ap_url(reverse("activitypub:video", kwargs={"slug": video.slug})),
         "to": ["https://www.w3.org/ns/activitystreams#Public"],
@@ -191,14 +191,14 @@ def video_attributions(video):
                 ),
             },
             # We should fake a default channel for every videos
-            #            {
-            #                "type": "Group",
-            #                "id": ap_url(
-            #                    reverse(
-            #                        "activitypub:account", kwargs={"username": video.owner.username}
-            #                    )
-            #                ),
-            #            },
+            {
+                "type": "Group",
+                "id": ap_url(
+                    reverse(
+                        "activitypub:account_channel", kwargs={"username": video.owner.username}
+                    )
+                ),
+            },
         ]
         + [
             {

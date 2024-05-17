@@ -4,7 +4,7 @@ from django.urls import reverse
 from pod.activitypub.utils import ap_url
 
 
-def channel_to_ap_payload(channel):
+def channel_to_ap_group(channel):
     return {
         "type": "Group",
         "id": ap_url(reverse("activitypub:channel", kwargs={"slug": channel.slug})),

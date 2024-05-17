@@ -11,7 +11,7 @@ from pod.video.models import Video
 
 from .constants import AP_DEFAULT_CONTEXT, AP_PT_VIDEO_CONTEXT, BASE_HEADERS
 from .models import Follower, Following
-from .serialization.video import ap_video_to_external_video, video_to_ap_payload
+from .serialization.video import ap_video_to_external_video, video_to_ap_video
 from .utils import ap_post, ap_url
 
 logger = logging.getLogger(__name__)
@@ -187,7 +187,7 @@ def send_video_update_object(video: Video, follower: Follower):
         "id": video_ap_url,
         "actor": owner_ap_url,
         "object": {
-            **video_to_ap_payload(video),
+            **video_to_ap_video(video),
         },
     }
     response = ap_post(inbox, payload)
