@@ -104,7 +104,8 @@ with open("pod/activitypub/ap.key") as fd:
     ACTIVITYPUB_PRIVATE_KEY = fd.read()
 
 with open("pod/activitypub/ap.pub") as fd:
-    ACTIVITYPUB_PUBLIC_KEY = fd.read()```
+    ACTIVITYPUB_PUBLIC_KEY = fd.read()
+```
 
 ## Development
 
