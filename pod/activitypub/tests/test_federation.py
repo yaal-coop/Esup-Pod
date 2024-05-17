@@ -59,7 +59,7 @@ class ActivityPubViewTest(ActivityPubTestCase):
         """Test that a Follow request returns a 204, and post an Accept response in the follower's inbox."""
         self.assertEqual(Follower.objects.all().count(), 0)
 
-        @httmock.all_requests
+        @httmock.urlmatch(path=r"^/accounts/peertube$")
         def follower_ap_url(url, request):
             return httmock.response(
                 200,
