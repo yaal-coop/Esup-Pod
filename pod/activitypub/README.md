@@ -47,6 +47,19 @@ The ActivityPub implementation tries to replicate the network messages of Peertu
 There may be things that could have been done differently while still following the ActivityPub specs, but changing the network exchanges would require checking if the Peertube compatibility is not broken.
 This is due to Peertube having a few undocumented behaviors that are not exactly part of the AP specs.
 
+To achieve compatibility with Peertube, Pod implements two specifications to sign ActivityPub exchanges.
+
+- [Signing HTTP Messages, draft 12](https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12).
+  This specification is replaced by [RFC9421](https://www.rfc-editor.org/rfc/rfc9421.html) but Peertube does not implement the finale spec,
+  and instead lurks on the writing of the [ActivityPub and HTTP Signatures](https://swicg.github.io/activitypub-http-signature/) spec, that is also still a draft.
+  See the [related discussion](https://framacolibri.org/t/rfc9421-replaces-the-signing-http-messages-draft/20911/2).
+  This spec describe how to sign ActivityPub payload with HTTP headers.
+- [Linked Data Signatures 1.0](https://web.archive.org/web/20170717200644/https://w3c-dvcg.github.io/ld-signatures/) draft.
+  This specification is replaced by [Verifiable Credential Data Integrity](https://w3c.github.io/vc-data-integrity/) but Peertube does not implement the finale spec.
+  This spec describe how to sign ActivityPub payload by adding fields in the payload.
+
+The state of the specification support in Peertube is similar to [Mastodon](https://docs.joinmastodon.org/spec/security/), and is probably a mean to keep the two software compatible with each other.
+
 ## Limitations
 
 - Peertube instance will only be able to federate with a Pod instance if the video thumbnails are in JPG format.
