@@ -130,6 +130,7 @@ class ActivityPubViewTest(ActivityPubTestCase):
                     "actor": "http://peertube.test/accounts/peertube",
                     "object": "http://localhost:8000/.well-known/peertube",
                 },
+                "signature": mock.ANY,
             }
             inbox_url = "http://peertube.test/accounts/peertube/inbox"
             post.assert_called_with(
