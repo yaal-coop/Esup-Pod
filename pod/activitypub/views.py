@@ -17,9 +17,10 @@ from .constants import (
     AP_PT_CHAPTERS_CONTEXT,
     AP_PT_VIDEO_CONTEXT,
 )
-from .serialization.account import account_to_ap_payload
-from .serialization.channel import channel_to_ap_payload
-from .serialization.video import video_to_ap_payload
+from .serialization.account import account_to_ap_actor
+from .serialization.account import account_to_ap_group
+from .serialization.channel import channel_to_ap_group
+from .serialization.video import video_to_ap_video
 from .tasks import (
     task_handle_inbox_accept,
     task_handle_inbox_announce,
@@ -107,7 +108,7 @@ def account(request, username=None):
     )
     response = {
         "@context": context,
-        **account_to_ap_payload(user),
+        **account_to_ap_actor(user),
     }
     logger.debug("account response: %s", json.dumps(response, indent=True))
     return JsonResponse(response, status=200)
@@ -273,7 +274,7 @@ def video(request, slug):
     video = get_object_or_404(Video, slug=slug)
     response = {
         "@context": AP_DEFAULT_CONTEXT + [AP_PT_VIDEO_CONTEXT],
-        **video_to_ap_payload(video),
+        **video_to_ap_video(video),
     }
     logger.debug("video response: %s", json.dumps(response, indent=True))
     return JsonResponse(response, status=200)
@@ -291,10 +292,28 @@ def channel(request, slug):
 
     response = {
         "@context": AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT],
-        **channel_to_ap_payload(channel),
+        **channel_to_ap_group(channel),
     }
 
     logger.debug("video response: %s", json.dumps(response, indent=True))
+    return JsonResponse(response, status=200)
+
+
+@csrf_exempt
+def account_channel(request, username=None):
+    """
+    'Person' or 'Application' fake channel for Peertube compatibility.
+    """
+    user = get_object_or_404(User, username=username) if username else None
+
+    context = (
+        AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT] if user else AP_DEFAULT_CONTEXT
+    )
+    response = {
+        "@context": context,
+        **account_to_ap_group(user),
+    }
+    logger.debug("account_channel response: %s", json.dumps(response, indent=True))
     return JsonResponse(response, status=200)
 
 
