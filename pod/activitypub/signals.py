@@ -1,11 +1,4 @@
-"""Signal callbacks.
-
-Signals are triggered after commits and not just after .save() or .delete() calls,
-so we are sure that when we trigger the celery tasks, the database is really up to date,
-and that any federated instance will be able to read the updated data.
-
-Without this, celery tasks could have been triggered BEFORE the data was actually written to the database,
-leading to old data being broadcasted."""
+"""Signal callbacks."""
 
 from django.db import transaction
 from .tasks import (
@@ -16,6 +9,14 @@ from .tasks import (
 
 
 def on_video_save(instance, created, **kwargs):
+    """Celery tasks are triggered after commits and not just after .save() calls,
+    so we are sure the database is really up to date at the moment we send data accross the network,
+    and that any federated instance will be able to read the updated data.
+
+    Without this, celery tasks could have been triggered BEFORE the data was actually written to the database,
+    leading to old data being broadcasted.
+    """
+
     def trigger_save_task():
         if created:
             task_broadcast_local_video_creation.delay(instance.id)
@@ -27,7 +28,11 @@ def on_video_save(instance, created, **kwargs):
 
 
 def on_video_delete(instance, **kwargs):
-    def trigger_delete_task():
-        task_broadcast_local_video_deletion.delay(instance.id)
+    """At the moment the celery task will be triggered,
+    the video MAY already have been deleted.
+    Thus, we avoid to pass a Video id to read in the database,
+    and we directly pass pertinent data."""
 
-    transaction.on_commit(trigger_delete_task)
+    task_broadcast_local_video_deletion.delay(
+        video_slug=instance.slug, owner_username=instance.owner.username
+    )
