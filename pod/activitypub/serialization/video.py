@@ -195,7 +195,8 @@ def video_attributions(video):
                 "type": "Group",
                 "id": ap_url(
                     reverse(
-                        "activitypub:account_channel", kwargs={"username": video.owner.username}
+                        "activitypub:account_channel",
+                        kwargs={"username": video.owner.username},
                     )
                 ),
             },
