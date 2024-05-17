@@ -7,7 +7,7 @@ from pod.activitypub.constants import INSTANCE_ACTOR_ID
 from pod.activitypub.utils import ap_url
 
 
-def account_to_ap_actor(user : Optional[User]):
+def account_to_ap_actor(user: Optional[User]):
     url_args = {"username": user.username} if user else {}
     response = {
         "id": ap_url(reverse("activitypub:account", kwargs=url_args)),
@@ -28,7 +28,7 @@ def account_to_ap_actor(user : Optional[User]):
     return response
 
 
-def account_to_ap_group(user : Optional[User]):
+def account_to_ap_group(user: Optional[User]):
     """Default channel for users.
 
     This is needed by Peertube, since in Peertube every
@@ -38,7 +38,9 @@ def account_to_ap_group(user : Optional[User]):
 
     # peertube needs a different username for the user account and the user channel
     # https://github.com/Chocobozzz/PeerTube/blob/5dfa07adb5ae8f1692a15b0f97ea0694894264c9/server/core/lib/activitypub/actors/shared/creator.ts#L89-L110
-    preferred_username = account_preferred_username(user)["preferredUsername"] + "_channel"
+    preferred_username = (
+        account_preferred_username(user)["preferredUsername"] + "_channel"
+    )
     name = account_name(user)["name"] + "_channel"
 
     return {
@@ -59,43 +61,42 @@ def account_to_ap_group(user : Optional[User]):
         "attributedTo": [
             {
                 "type": "Person",
-                "id": ap_url(
-                    reverse("activitypub:account", kwargs=url_args)
-                ),
+                "id": ap_url(reverse("activitypub:account", kwargs=url_args)),
             }
         ],
     }
 
-def account_type(user : Optional[User]):
+
+def account_type(user: Optional[User]):
     return {"type": "Person" if user else "Application"}
 
 
-def account_url(user : Optional[User]):
+def account_url(user: Optional[User]):
     url_args = {"username": user.username} if user else {}
     return {"url": ap_url(reverse("activitypub:account", kwargs=url_args))}
 
 
-def account_following(user : Optional[User]):
+def account_following(user: Optional[User]):
     url_args = {"username": user.username} if user else {}
     return {"following": ap_url(reverse("activitypub:following", kwargs=url_args))}
 
 
-def account_followers(user : Optional[User]):
+def account_followers(user: Optional[User]):
     url_args = {"username": user.username} if user else {}
     return {"followers": ap_url(reverse("activitypub:followers", kwargs=url_args))}
 
 
-def account_inbox(user : Optional[User]):
+def account_inbox(user: Optional[User]):
     url_args = {"username": user.username} if user else {}
     return {"inbox": ap_url(reverse("activitypub:inbox", kwargs=url_args))}
 
 
-def account_outbox(user : Optional[User]):
+def account_outbox(user: Optional[User]):
     url_args = {"username": user.username} if user else {}
     return {"outbox": ap_url(reverse("activitypub:outbox", kwargs=url_args))}
 
 
-def account_endpoints(user : Optional[User]):
+def account_endpoints(user: Optional[User]):
     """sharedInbox is needed by peertube to send video updates."""
     url_args = {"username": user.username} if user else {}
     return {
@@ -104,11 +105,12 @@ def account_endpoints(user : Optional[User]):
         }
     }
 
-def account_playlists(user : Optional[User]):
+
+def account_playlists(user: Optional[User]):
     return {}
 
 
-def account_public_key(user : Optional[User]):
+def account_public_key(user: Optional[User]):
     instance_actor_url = ap_url(reverse("activitypub:account"))
     return {
         "publicKey": {
@@ -119,21 +121,21 @@ def account_public_key(user : Optional[User]):
     }
 
 
-def account_preferred_username(user : Optional[User]):
+def account_preferred_username(user: Optional[User]):
     return {"preferredUsername": user.username if user else INSTANCE_ACTOR_ID}
 
 
-def account_name(user : Optional[User]):
+def account_name(user: Optional[User]):
     return {"name": user.username if user else INSTANCE_ACTOR_ID}
 
 
-def account_summary(user : Optional[User]):
+def account_summary(user: Optional[User]):
     if user:
         return {"summary": user.owner.commentaire}
     return {}
 
 
-def account_icon(user : Optional[User]):
+def account_icon(user: Optional[User]):
     if user and user.owner.userpicture:
         return {
             "icon": [
