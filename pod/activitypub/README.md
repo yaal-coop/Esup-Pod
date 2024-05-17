@@ -54,8 +54,6 @@ This is due to Peertube having a few undocumented behaviors that are not exactly
   [More details here](https://framacolibri.org/t/comments-and-suggestions-on-the-peertube-activitypub-implementation/21215).
 - The pod default `Site` must be exactly the URL accessed for ActivityPub endpoint to work as expected.
   This is notably due to the fact some absolute URLs are built within celery tasks, with no possibility to guess a request domain.
-- Peertube needs at least one Channel for each video for federation to work (this have low chances to evolve soon).
-  TODO: build a default channel for each user.
 
 ## Configuration
 
