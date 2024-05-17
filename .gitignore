@@ -74,6 +74,7 @@ compile-model
 *.crt
 *.key
 *.pem
+*.pub
 
 # NPM stuffs #
 ################
