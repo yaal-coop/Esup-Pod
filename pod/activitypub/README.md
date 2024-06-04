@@ -63,7 +63,8 @@ The state of the specification support in Peertube is similar to [Mastodon](http
 
 ## Limitations
 
-- Peertube instance will only be able to federate with a Pod instance if the video thumbnails are in JPEG format.
+- Peertube instance will only be able to index Pod videos if the video thumbnails are absent.
+- Peertube instance will only be able to index Pod videos if the thumbnails are in JPEG format.
   png thumbnails are not supported at the moment (but that may come in the future
   [more details here](https://framacolibri.org/t/comments-and-suggestions-on-the-peertube-activitypub-implementation/21215)).
   In the meantime, pod fakes the mime-type of all thumbnails to be JPEG, even when they actually are PNGs.
