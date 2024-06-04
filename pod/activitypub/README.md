@@ -110,8 +110,7 @@ with open("pod/activitypub/ap.pub") as fd:
 ## Development
 
 The `DOCKER_ENV` environment var should be set to `full` so a peertube instance and a ActivityPub celery worker are launched.
-
-Then peertube is available at http://peertube.localhost:9000, and the address to be used for pod is http://pod.localhost:8000
+Then peertube is available at http://peertube.localhost:9000.
 
 ### Federate Peertube with Pod
 
