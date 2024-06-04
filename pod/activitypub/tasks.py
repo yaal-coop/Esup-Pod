@@ -159,10 +159,10 @@ def task_broadcast_local_video_update(video_id):
 
 
 @activitypub_app.task()
-def task_broadcast_local_video_deletion(video_slug, owner_username):
+def task_broadcast_local_video_deletion(video_id, owner_username):
     from .models import Follower
     from .network import send_video_delete_object
 
     # TODO: maybe delegate in subtasks for better performance?
     for follower in Follower.objects.all():
-        send_video_delete_object(video_slug, owner_username, follower)
+        send_video_delete_object(video_id, owner_username, follower)

@@ -7,7 +7,7 @@ from pod.activitypub.utils import ap_url
 def channel_to_ap_group(channel):
     return {
         "type": "Group",
-        "id": ap_url(reverse("activitypub:channel", kwargs={"slug": channel.slug})),
+        "id": ap_url(reverse("activitypub:channel", kwargs={"id": channel.id})),
         **channel_url(channel),
         **channel_following(channel),
         **channel_followers(channel),
@@ -29,9 +29,7 @@ def channel_to_ap_group(channel):
 
 def channel_url(channel):
     # needed by peertube
-    return {
-        "url": ap_url(reverse("activitypub:channel", kwargs={"slug": channel.slug}))
-    }
+    return {"url": ap_url(reverse("activitypub:channel", kwargs={"id": channel.id}))}
 
 
 def channel_following(channel):
@@ -55,7 +53,7 @@ def channel_inbox(channel):
 
     This is a fake URL and is not intented to be reached."""
 
-    channel_url = ap_url(reverse("activitypub:channel", kwargs={"slug": channel.slug}))
+    channel_url = ap_url(reverse("activitypub:channel", kwargs={"id": channel.id}))
     inbox_url = f"{channel_url}/inbox"
     return {"inbox": inbox_url}
 
@@ -72,7 +70,7 @@ def channel_name(channel):
 
 
 def channel_endpoints(channel):
-    channel_url = ap_url(reverse("activitypub:channel", kwargs={"slug": channel.slug}))
+    channel_url = ap_url(reverse("activitypub:channel", kwargs={"id": channel.id}))
     inbox_url = f"{channel_url}/inbox"
     return {"endpoints": {"sharedInbox": inbox_url}}
 
