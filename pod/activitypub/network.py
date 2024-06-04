@@ -69,7 +69,6 @@ def handle_incoming_unfollow(ap_follow):
 
 def send_follow_request(following: Following):
     ap_actor = get_instance_application_account_metadata(following.object)
-    # TODO: handle rejects
     following_url = ap_url(reverse("activitypub:following"))
     payload = {
         "@context": AP_DEFAULT_CONTEXT,
@@ -78,7 +77,6 @@ def send_follow_request(following: Following):
         "actor": ap_url(reverse("activitypub:account")),
         "object": ap_actor["id"],
     }
-    logger.info(f"{payload}")
     response = ap_post(ap_actor["inbox"], payload)
     following.status = Following.Status.REQUESTED
     following.save()
