@@ -13,6 +13,10 @@ class ActivityPubTestCase(TestCase):
         "HTTP_ACCEPT": "application/activity+json, application/ld+json",
     }
 
+    @httmock.urlmatch(path=r"/accounts/peertube/inbox")
+    def mock_inbox(self, url, request):
+        return httmock.response(204, "")
+
     @httmock.urlmatch(path=r"/accounts/peertube")
     def mock_get_actor(self, url, request):
         with open("pod/activitypub/tests/fixtures/application_actor.json") as fd:
