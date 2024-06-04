@@ -80,7 +80,7 @@ def payload_normalize(payload):
 
 
 def signed_payload_headers(payload, url):
-    """Signs JSON-LD payload according to the 'Signing HTTP Messages' RFC draft.
+    """Sign JSON-LD payload according to the 'Signing HTTP Messages' RFC draft.
     This brings compatibility with peertube (and mastodon for instance).
 
     More information here:
@@ -115,7 +115,7 @@ def signed_payload_headers(payload, url):
 
 
 def signature_payload(payload, url):
-    """Signs JSON-LD payload according to the 'Linked Data Signatures 1.0' RFC draft.
+    """Sign JSON-LD payload according to the 'Linked Data Signatures 1.0' RFC draft.
     This brings compatibility with peertube (and mastodon for instance).
 
     More information here:
@@ -159,6 +159,8 @@ def stable_uuid(seed, version=None):
 
 
 def make_magnet_url(video: Video, mp4):
+    """Build a fake - but valid - magnet URL for compatibility with peertube < 6.2"""
+
     uuid = stable_uuid(video.id, version=4)
     fake_hash = "".join(
         random.choice("0123456789abcdefghijklmnopqrstuvwxyz") for _ in range(40)
@@ -199,6 +201,8 @@ def ap_object(obj):
 
 
 def ap_post(url, payload, **kwargs):
+    """Sign and post an AP payload at a given URL."""
+
     logger.debug(
         "Posting to AP endpoint: %s\n%s", url, json.dumps(payload, indent=True)
     )
