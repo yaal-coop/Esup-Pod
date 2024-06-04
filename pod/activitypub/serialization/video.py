@@ -14,7 +14,7 @@ def ap_video_to_external_video(payload):
 
 def video_to_ap_video(video):
     return {
-        "id": ap_url(reverse("activitypub:video", kwargs={"slug": video.slug})),
+        "id": ap_url(reverse("activitypub:video", kwargs={"id": video.id})),
         "to": ["https://www.w3.org/ns/activitystreams#Public"],
         "cc": [
             ap_url(
@@ -64,7 +64,7 @@ def video_duration(video):
 
 
 def video_uuid(video):
-    """needed by peertube in version 4 exactly
+    """needed by peertube 6.1, uuids must be version 4 exactly
     https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L76
     """
     return {"uuid": str(stable_uuid(video.id, version=4))}
@@ -83,9 +83,7 @@ def video_comments(video):
     """the comments endpoint is needed by peertube"""
     return {
         "commentsEnabled": not video.disable_comment,
-        "comments": ap_url(
-            reverse("activitypub:comments", kwargs={"slug": video.slug})
-        ),
+        "comments": ap_url(reverse("activitypub:comments", kwargs={"id": video.id})),
     }
 
 
@@ -135,7 +133,7 @@ def video_urls(video):
                 {
                     "type": "Link",
                     "mediaType": "text/html",
-                    "href": ap_url(reverse("video:video", args=(video.slug,))),
+                    "href": ap_url(reverse("video:video", args=(video.id,))),
                 },
             ]
             + [
@@ -204,9 +202,7 @@ def video_attributions(video):
         + [
             {
                 "type": "Group",
-                "id": ap_url(
-                    reverse("activitypub:channel", kwargs={"slug": channel.slug})
-                ),
+                "id": ap_url(reverse("activitypub:channel", kwargs={"id": channel.id})),
             }
             for channel in video.channel.all()
         ],
@@ -232,8 +228,8 @@ def video_likes(video):
     """
 
     return {
-        "likes": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
-        "dislikes": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
+        "likes": ap_url(reverse("activitypub:likes", kwargs={"id": video.id})),
+        "dislikes": ap_url(reverse("activitypub:likes", kwargs={"id": video.id})),
     }
 
 
@@ -245,7 +241,7 @@ def video_shares(video):
     """
 
     return {
-        "shares": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
+        "shares": ap_url(reverse("activitypub:likes", kwargs={"id": video.id})),
     }
 
 
@@ -311,7 +307,7 @@ def video_chapters(video):
         return {}
 
     return {
-        "hasParts": ap_url(reverse("activitypub:chapters", kwargs={"slug": video.slug}))
+        "hasParts": ap_url(reverse("activitypub:chapters", kwargs={"id": video.id}))
     }
 
 
@@ -384,7 +380,6 @@ def video_icon(video):
                 "url": video.get_thumbnail_url(scheme=True),
                 "width": video.thumbnail.file.width,
                 "height": video.thumbnail.file.height,
-
                 # TODO: use the real media type when peertub supports JPEG
                 # "mediaType": video.thumbnail.file_type,
                 "mediaType": "image/jpeg",
