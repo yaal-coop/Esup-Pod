@@ -132,7 +132,7 @@ def send_video_announce_object(video: Video, follower: Follower):
     actor_account = ap_object(follower.actor)
     inbox = actor_account["inbox"]
 
-    video_ap_url = ap_url(reverse("activitypub:video", kwargs={"slug": video.slug}))
+    video_ap_url = ap_url(reverse("activitypub:video", kwargs={"id": video.id}))
     owner_ap_url = ap_url(
         reverse("activitypub:account", kwargs={"username": video.owner.username})
     )
@@ -167,7 +167,7 @@ def send_video_update_object(video: Video, follower: Follower):
     actor_account = ap_object(follower.actor)
     inbox = actor_account["inbox"]
 
-    video_ap_url = ap_url(reverse("activitypub:video", kwargs={"slug": video.slug}))
+    video_ap_url = ap_url(reverse("activitypub:video", kwargs={"id": video.id}))
     owner_ap_url = ap_url(
         reverse("activitypub:account", kwargs={"username": video.owner.username})
     )
@@ -194,12 +194,12 @@ def send_video_update_object(video: Video, follower: Follower):
     return response.status_code == 204
 
 
-def send_video_delete_object(video_slug, owner_username, follower: Follower):
+def send_video_delete_object(video_id, owner_username, follower: Follower):
     # TODO: save the inbox for better performance?
     actor_account = ap_object(follower.actor)
     inbox = actor_account["inbox"]
 
-    video_ap_url = ap_url(reverse("activitypub:video", kwargs={"slug": video_slug}))
+    video_ap_url = ap_url(reverse("activitypub:video", kwargs={"id": video_id}))
     owner_ap_url = ap_url(
         reverse("activitypub:account", kwargs={"username": owner_username})
     )
