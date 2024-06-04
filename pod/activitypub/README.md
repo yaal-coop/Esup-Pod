@@ -111,8 +111,6 @@ with open("pod/activitypub/ap.pub") as fd:
 
 The `DOCKER_ENV` environment var should be set to `full` so a peertube instance and a ActivityPub celery worker are launched.
 
-The pod `Site` must be set on `pod.localhost:8000` in the [admin pannel](http://pod.localhost:8000/admin/sites/site/1/change/) (instead of `localhost:8000`).
-
 Then peertube is available at http://peertube.localhost:9000, and the address to be used for pod is http://pod.localhost:8000
 
 ### Federate Peertube with Pod
@@ -128,3 +126,9 @@ Then peertube is available at http://peertube.localhost:9000, and the address to
 - Type `http://peertube.localhost:9000` in *Object* and save
 - On the [Followings list](http://pod.localhost:8000/admin/activitypub/following/) select the new object, and select `Send the federation request` in the action list, refresh.
 - If the status is *Following request accepted* then select the object again, and choose `Reindex instance videos` in the action list.
+
+### Unit tests
+
+```shell
+python manage.py test --settings=pod.main.test_settings pod.activitypub.test_settings
+```
