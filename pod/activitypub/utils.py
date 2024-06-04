@@ -203,7 +203,7 @@ def ap_object(obj):
 def ap_post(url, payload, **kwargs):
     """Sign and post an AP payload at a given URL."""
 
-    logger.debug(
+    logger.warning(
         "Posting to AP endpoint: %s\n%s", url, json.dumps(payload, indent=True)
     )
 
