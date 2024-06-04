@@ -373,11 +373,6 @@ def video_icon(video):
     """
     # only image/jpeg is supported on peertube
     # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L192
-
-    text/png may be supported someday
-    https://framacolibri.org/t/comments-and-suggestions-on-the-peertube-activitypub-implementation/21215/2
-    This would allow Pod to avoid using markdownify
-
     """
     if not video.thumbnail:
         return {}
@@ -387,9 +382,12 @@ def video_icon(video):
             {
                 "type": "Image",
                 "url": video.get_thumbnail_url(scheme=True),
-                "mediaType": video.thumbnail.file_type,
                 "width": video.thumbnail.file.width,
                 "height": video.thumbnail.file.height,
+
+                # TODO: use the real media type when peertub supports JPEG
+                # "mediaType": video.thumbnail.file_type,
+                "mediaType": "image/jpeg",
             },
         ]
     }
