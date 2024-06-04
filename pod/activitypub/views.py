@@ -184,13 +184,11 @@ def outbox(request, username=None):
                     "to": ["https://www.w3.org/ns/activitystreams#Public"],
                     "cc": [ap_url(reverse("activitypub:followers", kwargs=url_args))],
                     "type": "Announce",
-                    "id": ap_url(
-                        reverse("activitypub:video", kwargs={"slug": item.slug})
-                    )
+                    "id": ap_url(reverse("activitypub:video", kwargs={"id": item.id}))
                     + "/announces/1",
                     "actor": ap_url(reverse("activitypub:account", kwargs=url_args)),
                     "object": ap_url(
-                        reverse("activitypub:video", kwargs={"slug": item.slug})
+                        reverse("activitypub:video", kwargs={"id": item.id})
                     ),
                 }
                 for item in items
@@ -263,15 +261,19 @@ def followers(request, username=None):
 
 
 @csrf_exempt
-def video(request, slug):
+def video(request, id):
     """
     'Video' object as defined on ActivityStreams, with additions from the Peertube NS.
+
+    Note: videos cannot be identified by slugs, because Peertube 6.1 expects video AP URLs to be stable,
+        and a change in the video name may result in a change in the video slug.
+        https://framacolibri.org/t/comments-and-suggestions-on-the-peertube-activitypub-implementation/21215/10?u=eloi
 
     https://www.w3.org/TR/activitystreams-vocabulary/#dfn-video
     https://docs.joinpeertube.org/api/activitypub#video
     """
 
-    video = get_object_or_404(Video, slug=slug)
+    video = get_object_or_404(Video, id=id)
     response = {
         "@context": AP_DEFAULT_CONTEXT + [AP_PT_VIDEO_CONTEXT],
         **video_to_ap_video(video),
@@ -281,14 +283,14 @@ def video(request, slug):
 
 
 @csrf_exempt
-def channel(request, slug):
+def channel(request, id):
     """
     'Group' object as defined by ActivityStreams, with additions from the Peertube NS.
 
     https://www.w3.org/TR/activitystreams-vocabulary/#dfn-group
     https://docs.joinpeertube.org/api/activitypub
     """
-    channel = get_object_or_404(Channel, slug=slug)
+    channel = get_object_or_404(Channel, id=id)
 
     response = {
         "@context": AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT],
@@ -318,7 +320,7 @@ def account_channel(request, username=None):
 
 
 @csrf_exempt
-def likes(request, slug):
+def likes(request, id):
     """
     'Like' objects collection as defined by ActivityStreams and ActivityPub.
 
@@ -326,10 +328,10 @@ def likes(request, slug):
     https://www.w3.org/TR/activitypub/#liked
     """
 
-    video = get_object_or_404(Video, slug=slug)
+    video = get_object_or_404(Video, id=id)
     response = {
         "@context": AP_DEFAULT_CONTEXT,
-        "id": ap_url(reverse("activitypub:likes", kwargs={"slug": video.slug})),
+        "id": ap_url(reverse("activitypub:likes", kwargs={"id": video.id})),
         "type": "OrderedCollection",
         "totalItems": 0,
     }
@@ -337,7 +339,7 @@ def likes(request, slug):
 
 
 @csrf_exempt
-def dislikes(request, slug):
+def dislikes(request, id):
     """
     'Dislike' objects collection as defined by ActivityStreams and ActivityPub.
 
@@ -345,10 +347,10 @@ def dislikes(request, slug):
     https://www.w3.org/TR/activitypub/#liked
     """
 
-    video = get_object_or_404(Video, slug=slug)
+    video = get_object_or_404(Video, id=id)
     response = {
         "@context": AP_DEFAULT_CONTEXT,
-        "id": ap_url(reverse("activitypub:dislikes", kwargs={"slug": video.slug})),
+        "id": ap_url(reverse("activitypub:dislikes", kwargs={"id": video.id})),
         "type": "OrderedCollection",
         "totalItems": 0,
     }
@@ -356,17 +358,17 @@ def dislikes(request, slug):
 
 
 @csrf_exempt
-def shares(request, slug):
+def shares(request, id):
     """
     'Share' objects collection as defined by ActivityPub.
 
     https://www.w3.org/TR/activitypub/#video_shares
     """
 
-    video = get_object_or_404(Video, slug=slug)
+    video = get_object_or_404(Video, id=id)
     response = {
         "@context": AP_DEFAULT_CONTEXT,
-        "id": ap_url(reverse("activitypub:shares", kwargs={"slug": video.slug})),
+        "id": ap_url(reverse("activitypub:shares", kwargs={"id": video.id})),
         "type": "OrderedCollection",
         "totalItems": 0,
     }
@@ -374,18 +376,18 @@ def shares(request, slug):
 
 
 @csrf_exempt
-def comments(request, slug):
+def comments(request, id):
     """
     'Note' objects collection as defined by ActivityStreams.
 
     https://www.w3.org/TR/activitystreams-vocabulary/#dfn-note
     """
 
-    video = get_object_or_404(Video, slug=slug)
+    video = get_object_or_404(Video, id=id)
     # TODO: video.notecomments
     response = {
         "@context": AP_DEFAULT_CONTEXT,
-        "id": ap_url(reverse("activitypub:comments", kwargs={"slug": video.slug})),
+        "id": ap_url(reverse("activitypub:comments", kwargs={"id": video.id})),
         "type": "OrderedCollection",
         "totalItems": 0,
     }
@@ -393,17 +395,17 @@ def comments(request, slug):
 
 
 @csrf_exempt
-def chapters(request, slug):
+def chapters(request, id):
     """
     Video chapters description as defined by Peertube.
 
     https://joinpeertube.org/ns
     """
 
-    video = get_object_or_404(Video, slug=slug)
+    video = get_object_or_404(Video, id=id)
     response = {
         "@context": AP_DEFAULT_CONTEXT + [AP_PT_CHAPTERS_CONTEXT],
-        "id": ap_url(reverse("activitypub:comments", kwargs={"slug": video.slug})),
+        "id": ap_url(reverse("activitypub:comments", kwargs={"id": video.id})),
         "hasPart": [
             {
                 "name": chapter.title,

@@ -34,5 +34,5 @@ def on_video_delete(instance, **kwargs):
     and we directly pass pertinent data."""
 
     task_broadcast_local_video_deletion.delay(
-        video_slug=instance.slug, owner_username=instance.owner.username
+        video_id=instance.id, owner_username=instance.owner.username
     )
