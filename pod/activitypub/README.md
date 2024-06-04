@@ -125,6 +125,14 @@ Then peertube is available at http://peertube.localhost:9000.
 - On the [Followings list](http://pod.localhost:8000/admin/activitypub/following/) select the new object, and select `Send the federation request` in the action list, refresh.
 - If the status is *Following request accepted* then select the object again, and choose `Reindex instance videos` in the action list.
 
+## Shortcuts
+
+### Manual AP request
+
+```shell
+curl -H "Accept: application/activity+json, application/ld+json" -s "http://pod.localhost:9000/accounts/peertube" | jq
+```
+
 ### Unit tests
 
 ```shell
