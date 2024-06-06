@@ -12,7 +12,6 @@ class FollowerAdmin(admin.ModelAdmin):
 
 @admin.action(description=_("Send the federation request"))
 def send_federation_request(modeladmin, request, queryset):
-    raise Exception("yolo")
     for following in queryset:
         task_follow.delay(following.id)
     modeladmin.message_user(request, _("The federation requests have been sent"))

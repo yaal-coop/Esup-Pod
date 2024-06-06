@@ -22,7 +22,7 @@ class VideoUpdateTest(ActivityPubTestCase):
         ) as fd:
             account_announce_payload = json.load(fd)
 
-        with httmock.HTTMock(self.mock_get_actor, self.mock_get_video):
+        with httmock.HTTMock(self.mock_application_actor, self.mock_get_video):
             response = self.client.post(
                 "/ap/inbox",
                 json.dumps(account_announce_payload),
