@@ -2,6 +2,7 @@ import json
 
 import httmock
 from django.test import TestCase
+from pod.authentication.models import User
 
 
 class ActivityPubTestCase(TestCase):
@@ -13,12 +14,30 @@ class ActivityPubTestCase(TestCase):
         "HTTP_ACCEPT": "application/activity+json, application/ld+json",
     }
 
+    def setUp(self):
+        self.admin_user = User.objects.create_superuser(
+            username="admin",
+            first_name="Super",
+            last_name="User",
+            password="SuperPassword1234",
+        )
+
+    def tearDown(self):
+        del self.admin_user
+
+    @httmock.urlmatch(path=r"/.well-known/nodeinfo")
+    def mock_nodeinfo(self, url, request):
+        with open("pod/activitypub/tests/fixtures/nodeinfo.json") as fd:
+            payload = json.load(fd)
+
+        return httmock.response(200, payload)
+
     @httmock.urlmatch(path=r"/accounts/peertube/inbox")
     def mock_inbox(self, url, request):
         return httmock.response(204, "")
 
     @httmock.urlmatch(path=r"/accounts/peertube")
-    def mock_get_actor(self, url, request):
+    def mock_application_actor(self, url, request):
         with open("pod/activitypub/tests/fixtures/application_actor.json") as fd:
             payload = json.load(fd)
 

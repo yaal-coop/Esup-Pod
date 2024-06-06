@@ -6,17 +6,22 @@ from pod.activitypub.models import Following
 class AdminActivityPubTestCase(ActivityPubTestCase):
     def test_send_federation_request(self):
         """Nominal case test for the admin 'send_federation_request' action."""
+        self.client.force_login(self.admin_user)
 
         following = Following.objects.create(
             object="http://peertube.test", status=Following.Status.NONE
         )
 
-        with httmock.HTTMock(self.mock_inbox):
+        with httmock.HTTMock(
+            self.mock_nodeinfo, self.mock_application_actor, self.mock_inbox
+        ):
             response = self.client.post(
-                "/admin/activitypub/following",
+                "/admin/activitypub/following/",
                 {
                     "action": "send_federation_request",
-                    "_selected_action": str(following.id),
+                    "_selected_action": [
+                        str(following.id),
+                    ],
                 },
                 follow=True,
             )
