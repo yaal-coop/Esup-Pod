@@ -21,13 +21,10 @@ def send_federation_request(modeladmin, request, queryset):
 def reindex_videos(modeladmin, request, queryset):
     for following in queryset:
         task_index_videos.delay(following.id)
-    modeladmin.message_user(request, _("The video indexations has started"))
+    modeladmin.message_user(request, _("The video indexations have started"))
 
 
 @admin.register(Following)
 class FollowingAdmin(admin.ModelAdmin):
     actions = [send_federation_request, reindex_videos]
-    list_display = (
-        "object",
-        "status",
-    )
+    list_display = ("object", "status")
