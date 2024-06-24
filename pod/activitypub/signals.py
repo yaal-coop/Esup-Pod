@@ -8,7 +8,7 @@ from .tasks import (
 )
 
 
-def on_video_save(instance, created, **kwargs):
+def on_video_save(instance, sender, **kwargs):
     """Celery tasks are triggered after commits and not just after .save() calls,
     so we are sure the database is really up to date at the moment we send data accross the network,
     and that any federated instance will be able to read the updated data.
@@ -17,11 +17,33 @@ def on_video_save(instance, created, **kwargs):
     leading to old data being broadcasted.
     """
 
+    def is_new_and_visible(previous_state, current_state):
+        return not previous_state and not current_state.is_draft and not current_state.encoding_in_progress and not current_state.is_restricted and not current_state.password
+
+    def has_changed_to_visible(previous_state, current_state):
+        return previous_state and previous_state.is_draft and not current_state.is_draft and not current_state.encoding_in_progress and not current_state.is_restricted and not current_state.password
+
+    def has_changed_to_invisible(previous_state, current_state):
+        return previous_state and (not previous_state.is_draft and current_state.is_draft) or (not previous_state.is_restricted and current_state.is_restricted) or (not previous_state.password and current_state.password)
+
+    def is_still_visible(previous_state, current_state):
+        return previous_state and not previous_state.is_draft and not current_state.is_draft and not current_state.encoding_in_progress and not current_state.is_restricted and not current_state.password
+
     def trigger_save_task():
-        if created:
+        try:
+            previous_video = sender.objects.get(id=instance.id)
+        except sender.DoesNotExist:
+            previous_video = None
+
+        if is_new_and_visible(previous_state=previous_video, current_state=instance) or \
+            has_changed_to_visible(previous_state=previous_video, current_state=instance):
             task_broadcast_local_video_creation.delay(instance.id)
 
-        else:
+        elif has_changed_to_invisible(previous_state=previous_video, current_state=instance):
+            task_broadcast_local_video_deletion.delay(
+                video_id=instance.id, owner_username=instance.owner.username
+            )
+        elif is_still_visible(previous_state=previous_video, current_state=instance):
             task_broadcast_local_video_update.delay(instance.id)
 
     transaction.on_commit(trigger_save_task)
