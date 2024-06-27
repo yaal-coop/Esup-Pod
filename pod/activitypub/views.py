@@ -8,8 +8,10 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import render
 
 from pod.video.models import Channel, Video
+from pod.activitypub.models import ExternalVideo
 
 from .constants import (
     AP_DEFAULT_CONTEXT,
@@ -416,3 +418,28 @@ def chapters(request, id):
         ],
     }
     return JsonResponse(response, status=200)
+
+
+def render_external_video(request, id):
+    external_video = get_object_or_404(ExternalVideo, id=id)
+    return render(
+        request,
+        "videos/video.html",
+        {
+            "channel": None,
+            "video": external_video,
+            "theme": None,
+            "listNotes": None,
+            "owner_filter": False,
+            "playlist": None,
+        },
+    )
+
+def external_video(request, slug):
+    try:
+        id = int(slug[: slug.find("-")])
+    except ValueError:
+        raise SuspiciousOperation("Invalid external video id")
+
+    external_video = get_object_or_404(ExternalVideo, id=id)
+    return render_external_video(request, id)
