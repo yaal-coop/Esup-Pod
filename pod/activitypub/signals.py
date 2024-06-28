@@ -1,11 +1,21 @@
 """Signal callbacks."""
 
+import logging
 from django.db import transaction
 from .tasks import (
     task_broadcast_local_video_creation,
     task_broadcast_local_video_deletion,
     task_broadcast_local_video_update,
 )
+
+logger = logging.getLogger(__name__)
+
+
+def on_video_pre_save(instance, sender, **kwargs):
+    try:
+        instance._pre_save_instance = sender.objects.get(id=instance.id)
+    except sender.DoesNotExist:
+        instance._pre_save_instance = None
 
 
 def on_video_save(instance, sender, **kwargs):
@@ -17,31 +27,62 @@ def on_video_save(instance, sender, **kwargs):
     leading to old data being broadcasted.
     """
 
-    def is_new_and_visible(previous_state, current_state):
+    def is_new_and_visible(current_state, previous_state):
         return (
-            current_state
-            and not previous_state
+            not previous_state
+            and current_state
             and not current_state.is_draft
+            and current_state.encoded
             and not current_state.encoding_in_progress
             and not current_state.is_restricted
             and not current_state.password
         )
 
-    def has_changed_to_visible(previous_state, current_state):
+
+    def has_changed_to_visible(current_state, previous_state):
         return (
-            current_state
-            and previous_state
-            and previous_state.is_draft
-            and not current_state.is_draft
-            and not current_state.encoding_in_progress
-            and not current_state.is_restricted
-            and not current_state.password
+            previous_state
+            and current_state
+            and (
+                (
+                    previous_state.is_draft
+                    and not current_state.is_draft
+                    and current_state.encoded
+                    and not current_state.encoding_in_progress
+                    and not current_state.is_restricted
+                    and not current_state.password
+                )
+                or (
+                    previous_state.encoding_in_progress
+                    and not current_state.is_draft
+                    and current_state.encoded
+                    and not current_state.encoding_in_progress
+                    and not current_state.is_restricted
+                    and not current_state.password
+                )
+                or (
+                    previous_state.is_restricted
+                    and not current_state.is_draft
+                    and current_state.encoded
+                    and not current_state.encoding_in_progress
+                    and not current_state.is_restricted
+                    and not current_state.password
+                )
+                or (
+                    previous_state.password
+                    and not current_state.is_draft
+                    and current_state.encoded
+                    and not current_state.encoding_in_progress
+                    and not current_state.is_restricted
+                    and not current_state.password
+                )
+            )
         )
 
-    def has_changed_to_invisible(previous_state, current_state):
+    def has_changed_to_invisible(current_state, previous_state):
         return (
-            current_state
-            and previous_state
+            previous_state
+            and current_state
             and (
                 (not previous_state.is_draft and current_state.is_draft)
                 or (not previous_state.is_restricted and current_state.is_restricted)
@@ -49,38 +90,54 @@ def on_video_save(instance, sender, **kwargs):
             )
         )
 
-    def is_still_visible(previous_state, current_state):
+    def is_still_visible(current_state, previous_state):
         return (
-            current_state
-            and previous_state
+            previous_state
+            and current_state
             and not previous_state.is_draft
             and not current_state.is_draft
+            and previous_state.encoded
+            and not previous_state.encoding_in_progress
+            and current_state.encoded
             and not current_state.encoding_in_progress
+            and not previous_state.is_restricted
             and not current_state.is_restricted
+            and not previous_state.password
             and not current_state.password
         )
 
     def trigger_save_task():
-        try:
-            previous_video = sender.objects.get(id=instance.id)
-        except sender.DoesNotExist:
-            previous_video = None
+        previous_state = instance._pre_save_instance
 
         if is_new_and_visible(
-            previous_state=previous_video, current_state=instance
+            current_state=instance, previous_state=previous_state
         ) or has_changed_to_visible(
-            previous_state=previous_video, current_state=instance
+            current_state=instance, previous_state=previous_state
         ):
+            logger.info(
+                "Save publicly visible %s and broadcast a creation ActivityPub task",
+                instance,
+            )
             task_broadcast_local_video_creation.delay(instance.id)
 
         elif has_changed_to_invisible(
-            previous_state=previous_video, current_state=instance
+            current_state=instance, previous_state=previous_state
         ):
+            logger.info(
+                "Save publicly invisible %s and broadcast a deletion ActivityPub task",
+                instance,
+            )
             task_broadcast_local_video_deletion.delay(
                 video_id=instance.id, owner_username=instance.owner.username
             )
-        elif is_still_visible(previous_state=previous_video, current_state=instance):
+        elif is_still_visible(current_state=instance, previous_state=previous_state):
+            logger.info(
+                "Save publicly visible %s and broadcast an update ActivityPub task",
+                instance,
+            )
             task_broadcast_local_video_update.delay(instance.id)
+
+        del instance._pre_save_instance
 
     transaction.on_commit(trigger_save_task)
 
