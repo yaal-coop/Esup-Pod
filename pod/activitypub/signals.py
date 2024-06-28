@@ -10,6 +10,7 @@ from .tasks import (
 
 logger = logging.getLogger(__name__)
 
+
 def is_new_and_visible(current_state, previous_state):
     return (
         not previous_state
