@@ -10,6 +10,87 @@ from .tasks import (
 
 logger = logging.getLogger(__name__)
 
+def is_new_and_visible(current_state, previous_state):
+    return (
+        not previous_state
+        and current_state
+        and not current_state.is_draft
+        and current_state.encoded
+        and not current_state.encoding_in_progress
+        and not current_state.is_restricted
+        and not current_state.password
+    )
+
+
+def has_changed_to_visible(current_state, previous_state):
+    return (
+        previous_state
+        and current_state
+        and (
+            (
+                previous_state.is_draft
+                and not current_state.is_draft
+                and current_state.encoded
+                and not current_state.encoding_in_progress
+                and not current_state.is_restricted
+                and not current_state.password
+            )
+            or (
+                previous_state.encoding_in_progress
+                and not current_state.is_draft
+                and current_state.encoded
+                and not current_state.encoding_in_progress
+                and not current_state.is_restricted
+                and not current_state.password
+            )
+            or (
+                previous_state.is_restricted
+                and not current_state.is_draft
+                and current_state.encoded
+                and not current_state.encoding_in_progress
+                and not current_state.is_restricted
+                and not current_state.password
+            )
+            or (
+                previous_state.password
+                and not current_state.is_draft
+                and current_state.encoded
+                and not current_state.encoding_in_progress
+                and not current_state.is_restricted
+                and not current_state.password
+            )
+        )
+    )
+
+
+def has_changed_to_invisible(current_state, previous_state):
+    return (
+        previous_state
+        and current_state
+        and (
+            (not previous_state.is_draft and current_state.is_draft)
+            or (not previous_state.is_restricted and current_state.is_restricted)
+            or (not previous_state.password and current_state.password)
+        )
+    )
+
+
+def is_still_visible(current_state, previous_state):
+    return (
+        previous_state
+        and current_state
+        and not previous_state.is_draft
+        and not current_state.is_draft
+        and previous_state.encoded
+        and not previous_state.encoding_in_progress
+        and current_state.encoded
+        and not current_state.encoding_in_progress
+        and not previous_state.is_restricted
+        and not current_state.is_restricted
+        and not previous_state.password
+        and not current_state.password
+    )
+
 
 def on_video_pre_save(instance, sender, **kwargs):
     try:
@@ -26,85 +107,6 @@ def on_video_save(instance, sender, **kwargs):
     Without this, celery tasks could have been triggered BEFORE the data was actually written to the database,
     leading to old data being broadcasted.
     """
-
-    def is_new_and_visible(current_state, previous_state):
-        return (
-            not previous_state
-            and current_state
-            and not current_state.is_draft
-            and current_state.encoded
-            and not current_state.encoding_in_progress
-            and not current_state.is_restricted
-            and not current_state.password
-        )
-
-
-    def has_changed_to_visible(current_state, previous_state):
-        return (
-            previous_state
-            and current_state
-            and (
-                (
-                    previous_state.is_draft
-                    and not current_state.is_draft
-                    and current_state.encoded
-                    and not current_state.encoding_in_progress
-                    and not current_state.is_restricted
-                    and not current_state.password
-                )
-                or (
-                    previous_state.encoding_in_progress
-                    and not current_state.is_draft
-                    and current_state.encoded
-                    and not current_state.encoding_in_progress
-                    and not current_state.is_restricted
-                    and not current_state.password
-                )
-                or (
-                    previous_state.is_restricted
-                    and not current_state.is_draft
-                    and current_state.encoded
-                    and not current_state.encoding_in_progress
-                    and not current_state.is_restricted
-                    and not current_state.password
-                )
-                or (
-                    previous_state.password
-                    and not current_state.is_draft
-                    and current_state.encoded
-                    and not current_state.encoding_in_progress
-                    and not current_state.is_restricted
-                    and not current_state.password
-                )
-            )
-        )
-
-    def has_changed_to_invisible(current_state, previous_state):
-        return (
-            previous_state
-            and current_state
-            and (
-                (not previous_state.is_draft and current_state.is_draft)
-                or (not previous_state.is_restricted and current_state.is_restricted)
-                or (not previous_state.password and current_state.password)
-            )
-        )
-
-    def is_still_visible(current_state, previous_state):
-        return (
-            previous_state
-            and current_state
-            and not previous_state.is_draft
-            and not current_state.is_draft
-            and previous_state.encoded
-            and not previous_state.encoding_in_progress
-            and current_state.encoded
-            and not current_state.encoding_in_progress
-            and not previous_state.is_restricted
-            and not current_state.is_restricted
-            and not previous_state.password
-            and not current_state.password
-        )
 
     def trigger_save_task():
         previous_state = instance._pre_save_instance

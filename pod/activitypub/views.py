@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render
+from django.core.exceptions import SuspiciousOperation
 
 from pod.video.models import Channel, Video
 from pod.activitypub.models import ExternalVideo
@@ -441,5 +442,5 @@ def external_video(request, slug):
     except ValueError:
         raise SuspiciousOperation("Invalid external video id")
 
-    external_video = get_object_or_404(ExternalVideo, id=id)
+    get_object_or_404(ExternalVideo, id=id)
     return render_external_video(request, id)
