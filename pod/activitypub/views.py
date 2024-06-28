@@ -41,6 +41,17 @@ logger = logging.getLogger(__name__)
 AP_PAGE_SIZE = 25
 
 
+TYPE_TASK = {
+    "Follow": task_handle_inbox_follow,
+    "Accept": task_handle_inbox_accept,
+    "Reject": task_handle_inbox_reject,
+    "Announce": task_handle_inbox_announce,
+    "Update": task_handle_inbox_update,
+    "Delete": task_handle_inbox_delete,
+    "Undo": task_handle_inbox_undo,
+}
+
+
 def nodeinfo(request):
     """
     Nodeinfo endpoint. This is the entrypoint for ActivityPub federation.
@@ -128,27 +139,8 @@ def inbox(request, username=None):
     logger.warning("inbox query: %s", json.dumps(data, indent=True))
     # TODO: test HTTP signature
 
-    if not username and data["type"] == "Follow":
-        task_handle_inbox_follow.delay(username, data)
-
-    elif not username and data["type"] == "Accept":
-        task_handle_inbox_accept.delay(username, data)
-
-    elif not username and data["type"] == "Reject":
-        task_handle_inbox_reject.delay(username, data)
-
-    elif not username and data["type"] == "Announce":
-        task_handle_inbox_announce.delay(username, data)
-
-    elif not username and data["type"] == "Update":
-        task_handle_inbox_update.delay(username, data)
-
-    elif not username and data["type"] == "Delete":
-        task_handle_inbox_delete.delay(username, data)
-
-    elif not username and data["type"] == "Undo":
-        task_handle_inbox_undo.delay(username, data)
-
+    if (activitypub_task := TYPE_TASK.get(data["type"], None)):
+        activitypub_task.delay(username, data)
     else:
         logger.debug("Ignoring inbox action: %s", data["type"])
 
@@ -435,6 +427,7 @@ def render_external_video(request, id):
             "playlist": None,
         },
     )
+
 
 def external_video(request, slug):
     try:
