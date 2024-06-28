@@ -1,7 +1,6 @@
 from django.template.defaultfilters import slugify
 from django.urls import reverse
 from markdownify import markdownify
-from django.utils.translation import get_language
 
 from pod.activitypub.constants import AP_LICENSE_MAPPING
 from pod.activitypub.models import ExternalVideo
@@ -171,16 +170,7 @@ def video_urls(video):
     magnets may become fully optional someday
     https://framacolibri.org/t/comments-and-suggestions-on-the-peertube-activitypub-implementation/21215/2
     """
-    truc = video.get_video_mp4()
-    # print(video)
-    # print(dir(truc[0]))
-    # print(truc[0].id)
-    # print(truc[0].pk)
-    # print(truc[0].source_file.url)
-    # print(truc[0].source_file.file)
-    # print(type(truc[0].source_file))
-    # print(dir(truc[0].source_file))
-    machin = {
+    return {
         "url": (
             [
                 # Webpage
@@ -223,8 +213,6 @@ def video_urls(video):
             ]
         )
     }
-    print(machin)
-    return machin
 
 
 def video_attributions(video):

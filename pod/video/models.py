@@ -46,9 +46,6 @@ from pod.main.lang_settings import PREF_LANG_CHOICES as __PREF_LANG_CHOICES__
 from django.db.models import Count, Case, When, Value, BooleanField, Q
 from django.db.models.functions import Concat
 from os.path import splitext
-from pod.activitypub.tasks import task_broadcast_local_video_creation
-from pod.activitypub.tasks import task_broadcast_local_video_deletion
-from pod.activitypub.tasks import task_broadcast_local_video_update
 
 
 USE_PODFILE = getattr(settings, "USE_PODFILE", False)
