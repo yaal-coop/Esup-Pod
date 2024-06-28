@@ -916,9 +916,10 @@ def get_filtered_videos_list(request, videos_list):
         videos_list = videos_list.filter(cursus__in=request.GET.getlist("cursus"))
     return videos_list.distinct()
 
+
 def get_filtered_external_videos_list(request, external_videos_list):
     """Return filtered external videos list by get parameters."""
-    if  request.GET.getlist("source_instance"):
+    if request.GET.getlist("source_instance"):
         external_videos_list = external_videos_list.filter(
             Q(source_instance__object__in=request.GET.getlist("source_instance"))
         )

@@ -8,7 +8,6 @@ from django.urls import reverse
 
 from pod.activitypub.utils import ap_object
 from pod.video.models import Video
-from pod.activitypub.models import ExternalVideo
 
 from .constants import AP_DEFAULT_CONTEXT, AP_PT_VIDEO_CONTEXT, BASE_HEADERS
 from .models import Follower, Following
