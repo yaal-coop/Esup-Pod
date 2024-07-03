@@ -14,17 +14,20 @@ logger = logging.getLogger(__name__)
 def ap_video_to_external_video(payload, source_instance):
     """Create an ExternalVideo object from an AP Video payload."""
 
-    video_source_links = [link for link in payload["url"] if "mediaType" in link and link["mediaType"] == "video/mp4"]
+    video_source_links = [{"type": link["mediaType"], "src": link["href"], "size": link["size"], "width": link["width"], "height": link["height"]} for link in payload["url"] if "mediaType" in link and link["mediaType"] == "video/mp4"]
     if not video_source_links:
         tags = []
         for link in payload["url"]:
             if "tag" in link:
                 tags.extend(link["tag"])
-        video_source_links = [link for link in tags if "mediaType" in link and link["mediaType"] == "video/mp4"]
+        video_source_links = [
+            {"type": link["mediaType"], "src": link["href"], "size": link["size"], "width": link["width"], "height": link["height"]} for link in tags if "mediaType" in link and link["mediaType"] == "video/mp4"
+        ]
 
     external_video_attributes = {
         "ap_id": payload["id"],
-        "video": video_source_links[0]["href"],
+        "video": video_source_links[0]["src"],
+        "videos": video_source_links,
         "title": payload["name"],
         "date_added": payload["published"],
         "thumbnail": [icon for icon in payload["icon"] if "thumbnails" in icon["url"]][0]["url"],

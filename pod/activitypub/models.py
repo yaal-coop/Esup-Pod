@@ -53,11 +53,6 @@ class ExternalVideo(BaseVideo):
         help_text=_("Video identifier URL"),
         unique=True,
     )
-    video = models.CharField(
-        _("Video source"),
-        max_length=255,
-        help_text=_("Video source URL"),
-    )
     thumbnail = models.CharField(
         _("Thumbnails"),
         max_length=255,
@@ -65,6 +60,9 @@ class ExternalVideo(BaseVideo):
         null=True,
     )
     viewcount = models.IntegerField(_("Number of view"), default=0)
+    videos = models.JSONField(
+        verbose_name=_("Mp4 resolutions list"),
+    )
 
     def save(self, *args, **kwargs) -> None:
         """Store an external video object in db."""
@@ -116,3 +114,21 @@ class ExternalVideo(BaseVideo):
 
     def get_marker_time_for_user(video, user):  # TODO: Check usage
         return 0
+
+    def get_video_mp4_json(self) -> list:
+        """Get the JSON representation of the MP4 video."""
+        return [
+            {
+                "type": video["type"],
+                "src": video["src"],
+                "size": video["size"],
+                "width": video["width"],
+                "height": video["height"],
+                "extension": f".{video['src'].split('.')[-1]}",
+                "label": f"{video['height']}p",
+            } for video in self.videos
+        ]
+        return [{'type': 'video/mp4', 'src': f'{self.video}', 'size': 76776, 'height': 360, 'extension': '.mp4', 'label': '360p'}]
+        list_mp4 = self.get_video_json(extensions="mp4")
+        logger.error(f"COUCOU {list_mp4['mp4']}")
+        return list_mp4["mp4"] if list_mp4.get("mp4") else []
