@@ -4,8 +4,6 @@ secret:
     name: Local Peertube high entropy secret - ./peertube.env
   - match: 6e0d657eb1f0fbc40cf0b8f3c3873ef627cc9cb7c4108d1c07d979c04bc8a4bb
     name: Local Peertube generic password - ./peertube.env
-  # - match: 0ea03c471e29496d1649678802038695d63f62da6d305e98fbafdd3a74f324b0
-  #   name: Generic Password - commit://staged/pod/quiz/tests/test_views.py
   ignored_paths:
   - pod/enrichment/tests/test_views.py
   - peertube.env
