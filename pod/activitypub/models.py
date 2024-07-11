@@ -129,6 +129,3 @@ class ExternalVideo(BaseVideo):
             } for video in self.videos
         ]
         return [{'type': 'video/mp4', 'src': f'{self.video}', 'size': 76776, 'height': 360, 'extension': '.mp4', 'label': '360p'}]
-        list_mp4 = self.get_video_json(extensions="mp4")
-        logger.error(f"COUCOU {list_mp4['mp4']}")
-        return list_mp4["mp4"] if list_mp4.get("mp4") else []
