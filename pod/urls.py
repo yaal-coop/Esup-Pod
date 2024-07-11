@@ -103,7 +103,7 @@ if USE_NOTIFICATIONS:
         url(r"^webpush/", include("webpush.urls")),
     ]
 
-# WEBPUSH
+# ACTIVITYPUB
 if USE_ACTIVITYPUB:
     urlpatterns += [
         url("", include("pod.activitypub.urls")),
