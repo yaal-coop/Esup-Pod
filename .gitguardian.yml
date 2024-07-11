@@ -1,4 +1,9 @@
 version: 2
 secret:
   ignored_paths:
-  - pod/enrichment/tests/test_views.py
+    - pod/enrichment/tests/test_views.py
+  ignored_matches:
+    - name: local_peertube_secret
+      match: 804061c0547350babbc79de045861dc90fe783b8cf9a5ae02b4d5a46fc60f78c
+    - name: local_peertube_password
+      match: postgres
