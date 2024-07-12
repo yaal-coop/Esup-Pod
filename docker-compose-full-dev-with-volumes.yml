@@ -99,7 +99,7 @@ services:
       - 9000:9000
       - 3000:3000
     env_file:
-      - peertube.env
+      - ./dockerfile-dev-with-volumes/peertube/peertube.env
       - ./.env.dev
     depends_on:
       - postgres
@@ -111,14 +111,14 @@ services:
   postgres:
     image: postgres:13-alpine
     env_file:
-      - peertube.env
+      - ./dockerfile-dev-with-volumes/peertube/peertube.env
       - ./.env.dev
     restart: "always"
 
   postfix:
     image: mwader/postfix-relay
     env_file:
-      - peertube.env
+      - ./dockerfile-dev-with-volumes/peertube/peertube.env
       - ./.env.dev
     restart: "always"
 
