@@ -100,6 +100,7 @@ services:
       - 3000:3000
     env_file:
       - peertube.env
+      - ./.env.dev
     depends_on:
       - postgres
       - redis
@@ -111,12 +112,14 @@ services:
     image: postgres:13-alpine
     env_file:
       - peertube.env
+      - ./.env.dev
     restart: "always"
 
   postfix:
     image: mwader/postfix-relay
     env_file:
       - peertube.env
+      - ./.env.dev
     restart: "always"
 
 #  redis-commander:
