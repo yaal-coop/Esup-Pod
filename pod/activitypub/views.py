@@ -159,7 +159,7 @@ def outbox(request, username=None):
     url_args = {"username": username} if username else {}
     page = int(request.GET.get("page", 0))
     user = get_object_or_404(User, username=username) if username else None
-    video_query = Video.objects.filter(is_restricted=False)
+    video_query = Video.objects.filter(is_activity_pub_broadcasted=True)
     if user:
         video_query = video_query.filter(owner=user)
     nb_videos = video_query.count()
