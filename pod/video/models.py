@@ -761,6 +761,7 @@ class BaseVideo(models.Model):
 
 class Video(BaseVideo):
     """Class describing video objects."""
+
     video = models.FileField(
         _("Video"),
         upload_to=get_storage_path_video,
@@ -897,6 +898,12 @@ class Video(BaseVideo):
         _("Disable comment"),
         help_text=_("Prevent users from commenting on your content."),
         default=False,
+    )
+
+    is_activity_pub_broadcasted = models.BooleanField(
+        _("Broadcasted through ActivityPub"),
+        default=False,
+        editable=False,
     )
 
     class Meta:
@@ -1487,6 +1494,15 @@ class Video(BaseVideo):
                     videodir.name = self.slug
                     videodir.owner = self.owner
                     videodir.save()
+
+    def is_visible(self):
+        return (
+            not self.is_draft
+            and self.encoded
+            and not self.encoding_in_progress
+            and not self.is_restricted
+            and not self.password
+        )
 
 
 class UpdateOwner(models.Model):

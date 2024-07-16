@@ -1,8 +1,17 @@
 import json
-
+import os
 import httmock
+
+from datetime import datetime
+from django.template.defaultfilters import slugify
 from django.test import TestCase
+
 from pod.authentication.models import User
+from pod.video.models import VIDEOS_DIR
+from pod.video.models import Video
+from pod.video.models import Type
+from pod.video_encode_transcript.models import VideoRendition
+from pod.video_encode_transcript.models import EncodingVideo
 
 
 class ActivityPubTestCase(TestCase):
@@ -21,9 +30,60 @@ class ActivityPubTestCase(TestCase):
             last_name="User",
             password="SuperPassword1234",
         )
+        video_type = Type.objects.create(title="autre")
+        filename = "test.mp4"
+        fname, dot, extension = filename.rpartition(".")
+        self.vr = VideoRendition.objects.get(resolution="640x360")
+        self.draft_video = Video.objects.create(
+            type=video_type,
+            title="Draft video",
+            password=None,
+            date_added=datetime.today(),
+            encoding_in_progress=False,
+            owner=self.admin_user,
+            date_evt=datetime.today(),
+            video=os.path.join(
+                VIDEOS_DIR,
+                self.admin_user.owner.hashkey,
+                "%s.%s" % (slugify(fname), extension),
+            ),
+            description="description",
+            is_draft=True,
+            duration=3,
+        )
+        self.ev_draft = EncodingVideo.objects.create(
+            video=self.draft_video,
+            rendition=self.vr,
+        )
+        self.visible_video = Video.objects.create(
+            type=video_type,
+            title="Visible video",
+            password=None,
+            date_added=datetime.today(),
+            encoding_in_progress=False,
+            owner=self.admin_user,
+            date_evt=datetime.today(),
+            video=os.path.join(
+                VIDEOS_DIR,
+                self.admin_user.owner.hashkey,
+                "%s.%s" % (slugify(fname), extension),
+            ),
+            description="description",
+            is_draft=False,
+            duration=3,
+        )
+        self.ev_visible = EncodingVideo.objects.create(
+            video=self.visible_video,
+            rendition=self.vr,
+        )
 
     def tearDown(self):
         del self.admin_user
+        del self.draft_video
+        del self.visible_video
+        del self.vr
+        del self.ev_draft
+        del self.ev_visible
 
     @httmock.urlmatch(path=r"^/.well-known/nodeinfo$")
     def mock_nodeinfo(self, url, request):
