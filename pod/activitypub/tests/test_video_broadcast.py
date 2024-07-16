@@ -17,7 +17,7 @@ class VideoBroadcastTest(ActivityPubTestCase):
         assert not self.draft_video.is_visible()
         assert not self.visible_video.is_activity_pub_broadcasted
         self.draft_video.is_draft = False
-        with self.captureOnCommitCallbacks(execute=True) as callbacks:
+        with self.captureOnCommitCallbacks(execute=True):
             self.draft_video.save()
         assert self.draft_video.is_visible()
 
@@ -37,7 +37,7 @@ class VideoBroadcastTest(ActivityPubTestCase):
         assert self.visible_video.is_visible()
         assert self.visible_video.is_activity_pub_broadcasted
         self.visible_video.title = "Still visible video"
-        with self.captureOnCommitCallbacks(execute=True) as callbacks:
+        with self.captureOnCommitCallbacks(execute=True):
             self.visible_video.save()
 
         assert not create_task.called
@@ -56,7 +56,7 @@ class VideoBroadcastTest(ActivityPubTestCase):
         assert self.visible_video.is_visible()
         assert self.visible_video.is_activity_pub_broadcasted
         self.visible_video.is_draft = True
-        with self.captureOnCommitCallbacks(execute=True) as callbacks:
+        with self.captureOnCommitCallbacks(execute=True):
             self.visible_video.save()
 
         assert not create_task.called
