@@ -122,6 +122,7 @@ class VideoAdmin(admin.ModelAdmin):
         "duration_in_time",
         "encoding_in_progress",
         "get_encoding_step",
+        "is_activity_pub_broadcasted",
         "get_thumbnail_admin",
     )
     list_display_links = ("id", "title")
@@ -162,7 +163,7 @@ class VideoAdmin(admin.ModelAdmin):
         "channel",
         "theme",
     )
-    readonly_fields = ("duration", "encoding_in_progress", "get_encoding_step")
+    readonly_fields = ("duration", "encoding_in_progress", "get_encoding_step", "is_activity_pub_broadcasted")
 
     inlines = []
 
