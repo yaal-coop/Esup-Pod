@@ -8,20 +8,39 @@ from pod.activitypub.utils import ap_url, make_magnet_url, stable_uuid
 from pod.video.models import LANG_CHOICES
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
 def ap_video_to_external_video(payload, source_instance):
     """Create an ExternalVideo object from an AP Video payload."""
 
-    video_source_links = [{"type": link["mediaType"], "src": link["href"], "size": link["size"], "width": link["width"], "height": link["height"]} for link in payload["url"] if "mediaType" in link and link["mediaType"] == "video/mp4"]
+    video_source_links = [
+        {
+            "type": link["mediaType"],
+            "src": link["href"],
+            "size": link["size"],
+            "width": link["width"],
+            "height": link["height"],
+        }
+        for link in payload["url"]
+        if "mediaType" in link and link["mediaType"] == "video/mp4"
+    ]
     if not video_source_links:
         tags = []
         for link in payload["url"]:
             if "tag" in link:
                 tags.extend(link["tag"])
         video_source_links = [
-            {"type": link["mediaType"], "src": link["href"], "size": link["size"], "width": link["width"], "height": link["height"]} for link in tags if "mediaType" in link and link["mediaType"] == "video/mp4"
+            {
+                "type": link["mediaType"],
+                "src": link["href"],
+                "size": link["size"],
+                "width": link["width"],
+                "height": link["height"],
+            }
+            for link in tags
+            if "mediaType" in link and link["mediaType"] == "video/mp4"
         ]
 
     external_video_attributes = {
@@ -30,7 +49,9 @@ def ap_video_to_external_video(payload, source_instance):
         "videos": video_source_links,
         "title": payload["name"],
         "date_added": payload["published"],
-        "thumbnail": [icon for icon in payload["icon"] if "thumbnails" in icon["url"]][0]["url"],
+        "thumbnail": [icon for icon in payload["icon"] if "thumbnails" in icon["url"]][0][
+            "url"
+        ],
         "duration": int(payload["duration"].lstrip("PT").rstrip("S")),
         "viewcount": payload["views"],
         "source_instance": source_instance,
@@ -53,9 +74,17 @@ def ap_video_to_external_video(payload, source_instance):
     )
 
     if created:
-        logger.info("ActivityPub external video %s created from %s instance", external_video, source_instance)
+        logger.info(
+            "ActivityPub external video %s created from %s instance",
+            external_video,
+            source_instance,
+        )
     else:
-        logger.info("ActivityPub external video %s updated from %s instance", external_video, source_instance)
+        logger.info(
+            "ActivityPub external video %s updated from %s instance",
+            external_video,
+            source_instance,
+        )
 
     return external_video
 
@@ -189,10 +218,12 @@ def video_urls(video):
                     "type": "Link",
                     "mediaType": mp4.encoding_format,
                     # "href": ap_url(mp4.source_file.url),
-                    "href": ap_url(reverse(
-                        "video:video_mp4",
-                        kwargs={"id": video.id, "mp4_id": mp4.id},
-                    )),
+                    "href": ap_url(
+                        reverse(
+                            "video:video_mp4",
+                            kwargs={"id": video.id, "mp4_id": mp4.id},
+                        )
+                    ),
                     "height": mp4.height,
                     "width": mp4.width,
                     "size": mp4.source_file.size,
@@ -357,9 +388,7 @@ def video_chapters(video):
     if not has_chapters:
         return {}
 
-    return {
-        "hasParts": ap_url(reverse("activitypub:chapters", kwargs={"id": video.id}))
-    }
+    return {"hasParts": ap_url(reverse("activitypub:chapters", kwargs={"id": video.id}))}
 
 
 def video_licences(video):

@@ -24,15 +24,22 @@ def on_video_save(instance, sender, **kwargs):
     Without this, celery tasks could have been triggered BEFORE the data was actually written to the database,
     leading to old data being broadcasted.
     """
+
     def trigger_save_task():
-        if not instance._was_activity_pub_broadcasted and instance.is_activity_pub_broadcasted:
+        if (
+            not instance._was_activity_pub_broadcasted
+            and instance.is_activity_pub_broadcasted
+        ):
             logger.info(
                 "Save publicly visible %s and broadcast a creation ActivityPub task",
                 instance,
             )
             task_broadcast_local_video_creation.delay(instance.id)
 
-        elif instance._was_activity_pub_broadcasted and not instance.is_activity_pub_broadcasted:
+        elif (
+            instance._was_activity_pub_broadcasted
+            and not instance.is_activity_pub_broadcasted
+        ):
             logger.info(
                 "Save publicly invisible %s and broadcast a deletion ActivityPub task",
                 instance,
@@ -40,7 +47,10 @@ def on_video_save(instance, sender, **kwargs):
             task_broadcast_local_video_deletion.delay(
                 video_id=instance.id, owner_username=instance.owner.username
             )
-        elif instance._was_activity_pub_broadcasted and instance.is_activity_pub_broadcasted:
+        elif (
+            instance._was_activity_pub_broadcasted
+            and instance.is_activity_pub_broadcasted
+        ):
             logger.info(
                 "Save publicly visible %s and broadcast an update ActivityPub task",
                 instance,

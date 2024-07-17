@@ -176,8 +176,16 @@ class PlaylistContent(models.Model):
     playlist = models.ForeignKey(
         Playlist, verbose_name=_("Playlist"), on_delete=models.CASCADE
     )
-    video = models.ForeignKey(Video, verbose_name=_("Video"), on_delete=models.CASCADE, blank=True, null=True)
-    external_video = models.ForeignKey(ExternalVideo, verbose_name=_("External video"), on_delete=models.CASCADE, blank=True, null=True)
+    video = models.ForeignKey(
+        Video, verbose_name=_("Video"), on_delete=models.CASCADE, blank=True, null=True
+    )
+    external_video = models.ForeignKey(
+        ExternalVideo,
+        verbose_name=_("External video"),
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
     date_added = models.DateTimeField(
         verbose_name=_("Addition date"), default=timezone.now, editable=False
     )
