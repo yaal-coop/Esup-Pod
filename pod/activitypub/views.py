@@ -117,9 +117,7 @@ def account(request, username=None):
     """
     user = get_object_or_404(User, username=username) if username else None
 
-    context = (
-        AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT] if user else AP_DEFAULT_CONTEXT
-    )
+    context = AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT] if user else AP_DEFAULT_CONTEXT
     response = {
         "@context": context,
         **account_to_ap_actor(user),
@@ -139,7 +137,7 @@ def inbox(request, username=None):
     logger.warning("inbox query: %s", json.dumps(data, indent=True))
     # TODO: test HTTP signature
 
-    if (activitypub_task := TYPE_TASK.get(data["type"], None)):
+    if activitypub_task := TYPE_TASK.get(data["type"], None):
         activitypub_task.delay(username, data)
     else:
         logger.debug("Ignoring inbox action: %s", data["type"])
@@ -303,9 +301,7 @@ def account_channel(request, username=None):
     """
     user = get_object_or_404(User, username=username) if username else None
 
-    context = (
-        AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT] if user else AP_DEFAULT_CONTEXT
-    )
+    context = AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT] if user else AP_DEFAULT_CONTEXT
     response = {
         "@context": context,
         **account_to_ap_group(user),
