@@ -1049,7 +1049,9 @@ class Video(BaseVideo):
                 [
                     "//",
                     get_current_site(request).domain,
-                    static(DEFAULT_AP_THUMBNAIL if is_activity_pub else DEFAULT_THUMBNAIL),
+                    static(
+                        DEFAULT_AP_THUMBNAIL if is_activity_pub else DEFAULT_THUMBNAIL
+                    ),
                 ]
             )
 

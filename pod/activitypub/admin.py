@@ -46,9 +46,7 @@ class ExternalVideoAdmin(admin.ModelAdmin):
         "get_thumbnail_admin",
     )
     list_display_links = ("id", "title")
-    list_filter = (
-        "date_added",
-    )
+    list_filter = ("date_added",)
 
     search_fields = [
         "id",
