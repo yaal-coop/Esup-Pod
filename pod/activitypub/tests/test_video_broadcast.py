@@ -4,7 +4,6 @@ from . import ActivityPubTestCase
 
 
 class VideoBroadcastTest(ActivityPubTestCase):
-
     @patch("pod.activitypub.tasks.task_broadcast_local_video_deletion.delay")
     @patch("pod.activitypub.tasks.task_broadcast_local_video_update.delay")
     @patch("pod.activitypub.tasks.task_broadcast_local_video_creation.delay")
@@ -61,4 +60,6 @@ class VideoBroadcastTest(ActivityPubTestCase):
 
         assert not create_task.called
         assert not update_task.called
-        delete_task.assert_called_with(video_id=self.visible_video.id, owner_username=self.admin_user.username)
+        delete_task.assert_called_with(
+            video_id=self.visible_video.id, owner_username=self.admin_user.username
+        )

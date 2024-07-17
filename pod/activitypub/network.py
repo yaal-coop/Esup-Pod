@@ -204,9 +204,7 @@ def send_video_delete_object(video_id, owner_username, follower: Follower):
         "to": [
             "https://www.w3.org/ns/activitystreams#Public",
             ap_url(reverse("activitypub:followers")),
-            ap_url(
-                reverse("activitypub:followers", kwargs={"username": owner_username})
-            ),
+            ap_url(reverse("activitypub:followers", kwargs={"username": owner_username})),
         ],
         "cc": [],
         "type": "Delete",
