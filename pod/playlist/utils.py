@@ -19,7 +19,9 @@ from .models import Playlist, PlaylistContent
 import hashlib
 
 
-def check_video_in_playlist(playlist: Playlist, video: Union[Video, ExternalVideo]) -> bool:
+def check_video_in_playlist(
+    playlist: Playlist, video: Union[Video, ExternalVideo]
+) -> bool:
     """
     Verify if a video is present in a playlist.
 
@@ -33,7 +35,9 @@ def check_video_in_playlist(playlist: Playlist, video: Union[Video, ExternalVide
     if isinstance(video, Video):
         return PlaylistContent.objects.filter(playlist=playlist, video=video).exists()
     elif isinstance(video, ExternalVideo):
-        return PlaylistContent.objects.filter(playlist=playlist, external_video=video).exists()
+        return PlaylistContent.objects.filter(
+            playlist=playlist, external_video=video
+        ).exists()
 
 
 def user_add_video_in_playlist(playlist: Playlist, video: Video) -> str:

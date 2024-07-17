@@ -126,6 +126,16 @@ class ExternalVideo(BaseVideo):
                 "height": video["height"],
                 "extension": f".{video['src'].split('.')[-1]}",
                 "label": f"{video['height']}p",
-            } for video in self.videos
+            }
+            for video in self.videos
         ]
-        return [{'type': 'video/mp4', 'src': f'{self.video}', 'size': 76776, 'height': 360, 'extension': '.mp4', 'label': '360p'}]
+        return [
+            {
+                "type": "video/mp4",
+                "src": f"{self.video}",
+                "size": 76776,
+                "height": 360,
+                "extension": ".mp4",
+                "label": "360p",
+            }
+        ]

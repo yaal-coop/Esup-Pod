@@ -210,5 +210,9 @@ urlpatterns += [
 
 # MP4 FILENAME FOR ACTIVITYPUB PURPOSE
 urlpatterns += [
-    url(r"^mp4/(?P<mp4_id>[\d]+)_(?P<id>[\d]+)\.mp4$", video_mp4_filename, name="video_mp4"),
+    url(
+        r"^mp4/(?P<mp4_id>[\d]+)_(?P<id>[\d]+)\.mp4$",
+        video_mp4_filename,
+        name="video_mp4",
+    ),
 ]
