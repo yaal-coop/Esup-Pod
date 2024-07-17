@@ -3,6 +3,7 @@ import os
 import httmock
 
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from django.template.defaultfilters import slugify
 from django.test import TestCase
 
@@ -38,10 +39,10 @@ class ActivityPubTestCase(TestCase):
             type=video_type,
             title="Draft video",
             password=None,
-            date_added=datetime.today(),
+            date_added=datetime.now(ZoneInfo("Europe/Paris")),
             encoding_in_progress=False,
             owner=self.admin_user,
-            date_evt=datetime.today(),
+            date_evt=datetime.now(ZoneInfo("Europe/Paris")),
             video=os.path.join(
                 VIDEOS_DIR,
                 self.admin_user.owner.hashkey,
@@ -59,10 +60,10 @@ class ActivityPubTestCase(TestCase):
             type=video_type,
             title="Visible video",
             password=None,
-            date_added=datetime.today(),
+            date_added=datetime.now(ZoneInfo("Europe/Paris")),
             encoding_in_progress=False,
             owner=self.admin_user,
-            date_evt=datetime.today(),
+            date_evt=datetime.now(ZoneInfo("Europe/Paris")),
             video=os.path.join(
                 VIDEOS_DIR,
                 self.admin_user.owner.hashkey,
