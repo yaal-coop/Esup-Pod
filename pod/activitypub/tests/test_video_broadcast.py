@@ -28,7 +28,7 @@ class VideoBroadcastTest(ActivityPubTestCase):
     @patch("pod.activitypub.tasks.task_broadcast_local_video_update.delay")
     @patch("pod.activitypub.tasks.task_broadcast_local_video_creation.delay")
     def test_video_update(self, create_task, update_task, delete_task):
-        """Create video and check broadcast through ActivityPub.
+        """Update video and check broadcast through ActivityPub.
 
         Visible video update should send an update task.
         """
@@ -47,7 +47,7 @@ class VideoBroadcastTest(ActivityPubTestCase):
     @patch("pod.activitypub.tasks.task_broadcast_local_video_update.delay")
     @patch("pod.activitypub.tasks.task_broadcast_local_video_creation.delay")
     def test_video_delete(self, create_task, update_task, delete_task):
-        """Create video and check broadcast through ActivityPub.
+        """Hide video and check broadcast through ActivityPub.
 
         Newly invisible video should send a delete task.
         """
