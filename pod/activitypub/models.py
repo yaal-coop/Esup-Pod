@@ -1,3 +1,5 @@
+import json
+
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.template.defaultfilters import slugify
@@ -108,6 +110,10 @@ class ExternalVideo(BaseVideo):
 
     get_thumbnail_admin.fget.short_description = _("Thumbnails")
 
+    def get_thumbnail_url(self, scheme=False, is_activity_pub=False) -> str:
+        """Get a thumbnail url for the video."""
+        return self.thumbnail
+
     def get_absolute_url(self) -> str:
         """Get the external video absolute URL."""
         return reverse("activitypub:external_video", args=[str(self.slug)])
@@ -117,7 +123,7 @@ class ExternalVideo(BaseVideo):
 
     def get_video_mp4_json(self) -> list:
         """Get the JSON representation of the MP4 video."""
-        return [
+        videos = [
             {
                 "type": video["type"],
                 "src": video["src"],
@@ -127,15 +133,7 @@ class ExternalVideo(BaseVideo):
                 "extension": f".{video['src'].split('.')[-1]}",
                 "label": f"{video['height']}p",
             }
-            for video in self.videos
+            for video in sorted(self.videos, key=lambda v: v["width"])
         ]
-        return [
-            {
-                "type": "video/mp4",
-                "src": f"{self.video}",
-                "size": 76776,
-                "height": 360,
-                "extension": ".mp4",
-                "label": "360p",
-            }
-        ]
+        videos[-1]["selected"] = True
+        return json.dumps(videos)

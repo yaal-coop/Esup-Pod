@@ -45,7 +45,6 @@ def ap_video_to_external_video(payload, source_instance):
 
     external_video_attributes = {
         "ap_id": payload["id"],
-        "video": video_source_links[0]["src"],
         "videos": video_source_links,
         "title": payload["name"],
         "date_added": payload["published"],
