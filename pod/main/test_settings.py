@@ -84,6 +84,7 @@ AFFILIATION_EVENT = ["employee"]
 
 USE_MEETING = True
 USE_SPEAKER = True
+USE_ACTIVITYPUB = True
 
 
 def get_shared_secret():
