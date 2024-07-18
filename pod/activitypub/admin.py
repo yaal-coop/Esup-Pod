@@ -1,13 +1,19 @@
+from django.conf import settings
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
 from .models import Follower, Following, ExternalVideo
 from .tasks import task_follow, task_index_videos
 
+USE_ACTIVITYPUB = getattr(settings, "USE_ACTIVITYPUB", True)
+
 
 @admin.register(Follower)
 class FollowerAdmin(admin.ModelAdmin):
     list_display = ("actor",)
+
+    def has_module_permission(self, request):
+        return USE_ACTIVITYPUB
 
 
 @admin.action(description=_("Send the federation request"))
@@ -32,6 +38,9 @@ class FollowingAdmin(admin.ModelAdmin):
         "status",
     )
 
+    def has_module_permission(self, request):
+        return USE_ACTIVITYPUB
+
 
 # TODO External video admin
 @admin.register(ExternalVideo)
@@ -55,3 +64,6 @@ class ExternalVideoAdmin(admin.ModelAdmin):
         "source_instance__object",
     ]
     list_per_page = 20
+
+    def has_module_permission(self, request):
+        return USE_ACTIVITYPUB
