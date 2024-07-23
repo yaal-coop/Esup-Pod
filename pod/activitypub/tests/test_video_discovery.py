@@ -3,7 +3,7 @@ import json
 
 from . import ActivityPubTestCase
 
-from pod.activitypub.serialization.video import ap_video_to_external_video
+from pod.activitypub.deserialization.video import ap_video_to_external_video
 
 
 class VideoDiscoveryTest(ActivityPubTestCase):

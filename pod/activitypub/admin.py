@@ -49,6 +49,7 @@ class ExternalVideoAdmin(admin.ModelAdmin):
         "id",
         "title",
         "source_instance",
+        "ap_id",
         "date_added",
         "viewcount",
         "duration_in_time",
@@ -57,12 +58,12 @@ class ExternalVideoAdmin(admin.ModelAdmin):
     list_display_links = ("id", "title")
     list_filter = ("date_added",)
 
-    search_fields = [
+    search_fields = (
         "id",
         "title",
         "video",
         "source_instance__object",
-    ]
+    )
     list_per_page = 20
 
     def has_module_permission(self, request):
