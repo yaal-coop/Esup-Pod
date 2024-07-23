@@ -12,10 +12,6 @@ class AdminActivityPubTestCase(ActivityPubTestCase):
     def test_send_federation_request(self):
         """Nominal case test for the admin 'send_federation_request' action."""
 
-        following = Following.objects.create(
-            object="http://peertube.test", status=Following.Status.NONE
-        )
-
         with httmock.HTTMock(
             self.mock_nodeinfo, self.mock_application_actor, self.mock_inbox
         ):
@@ -24,7 +20,7 @@ class AdminActivityPubTestCase(ActivityPubTestCase):
                 {
                     "action": "send_federation_request",
                     "_selected_action": [
-                        str(following.id),
+                        str(self.peertube_test_following.id),
                     ],
                 },
                 follow=True,
@@ -36,15 +32,12 @@ class AdminActivityPubTestCase(ActivityPubTestCase):
             "The federation requests have been sent",
         )
 
-        following.refresh_from_db()
-        self.assertEqual(following.status, Following.Status.REQUESTED)
+        self.peertube_test_following.refresh_from_db()
+        self.assertEqual(self.peertube_test_following.status, Following.Status.REQUESTED)
 
     def test_reindex_videos(self):
         """Nominal case test for the admin 'reindex_videos' action."""
 
-        following = Following.objects.create(
-            object="http://peertube.test", status=Following.Status.NONE
-        )
 
         with httmock.HTTMock(
             self.mock_nodeinfo,
@@ -59,7 +52,7 @@ class AdminActivityPubTestCase(ActivityPubTestCase):
                 {
                     "action": "reindex_videos",
                     "_selected_action": [
-                        str(following.id),
+                        str(self.peertube_test_following.id),
                     ],
                 },
                 follow=True,

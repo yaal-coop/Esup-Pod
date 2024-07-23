@@ -13,6 +13,7 @@ from pod.video.models import Video
 from pod.video.models import Type
 from pod.video_encode_transcript.models import VideoRendition
 from pod.video_encode_transcript.models import EncodingVideo
+from pod.activitypub.models import Following
 
 
 class ActivityPubTestCase(TestCase):
@@ -76,6 +77,9 @@ class ActivityPubTestCase(TestCase):
         self.ev_visible = EncodingVideo.objects.create(
             video=self.visible_video,
             rendition=self.vr,
+        )
+        self.peertube_test_following = Following.objects.create(
+            object="http://peertube.test", status=Following.Status.NONE
         )
 
     def tearDown(self):
