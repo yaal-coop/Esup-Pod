@@ -66,13 +66,14 @@ class ExternalVideo(BaseVideo):
         verbose_name=_("Mp4 resolutions list"),
     )
 
+    def __init__(self, *args, **kwargs):
+        super(ExternalVideo, self).__init__(is_external=True, *args, **kwargs)
+
     def save(self, *args, **kwargs) -> None:
         """Store an external video object in db."""
         newid = -1
 
-        # In case of creating new Video
         if not self.id:
-            # previous_video_state = None
             try:
                 newid = get_nextautoincrement(ExternalVideo)
             except Exception:
@@ -82,11 +83,9 @@ class ExternalVideo(BaseVideo):
                 except Exception:
                     newid = 1
         else:
-            # previous_video_state = Video.objects.get(id=self.id)
             newid = self.id
         newid = "%04d" % newid
         self.slug = "%s-%s" % (newid, slugify(self.title))
-        self.is_external = True
         super(ExternalVideo, self).save(*args, **kwargs)
 
     @property
