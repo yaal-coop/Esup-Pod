@@ -108,13 +108,10 @@ def task_handle_inbox_update(username, data):
 
 @activitypub_app.task()
 def task_handle_inbox_delete(username, data):
-    from pod.activitypub.utils import ap_object
-
     from .network import external_video_deletion
 
-    obj = ap_object(data["object"])
-    if obj["type"] == "Video":
-        return external_video_deletion(ap_video=obj)
+    if data["type"] == "Delete":
+        return external_video_deletion(ap_video_id=data["object"])
 
     logger.debug("Ignoring inbox 'Delete' action for '%s' object", obj["type"])
 
