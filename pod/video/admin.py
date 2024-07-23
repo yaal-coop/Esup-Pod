@@ -184,12 +184,12 @@ class VideoAdmin(admin.ModelAdmin):
 
     def get_list_display(self, request):
         if USE_ACTIVITYPUB:
-            return self.list_display + ["is_activity_pub_broadcasted"]
+            return self.list_display + ("is_activity_pub_broadcasted",)
         return self.list_display
 
     def get_readonly_fields(self, request, obj):
         if USE_ACTIVITYPUB:
-            return self.readonly_fields + ["is_activity_pub_broadcasted"]
+            return self.readonly_fields + ("is_activity_pub_broadcasted",)
         return self.readonly_fields
 
     def get_owner_establishment(self, obj):
