@@ -104,14 +104,18 @@ def index_video(following: Following, video_url):
 
 def external_video_added_by_actor(ap_video, ap_actor):
     # Announce for a Video created by a user account
-    # TODO: create an ExternalVideo
-    logger.warning(f"TODO: Handle Video addition by {ap_actor['type']}")
+    logger.warning("ActivityPub task call ExternalVideo %s creation from actor %s", ap_video, ap_actor)
+    following_domain = urlparse(ap_video["id"]).netloc
+    following = Following.objects.get(object__contains=following_domain)
+    ap_video_to_external_video(payload=ap_video, source_instance=following)
 
 
 def external_video_added_by_channel(ap_video, ap_channel):
     # Announce for a Video added to a channel
-    # TODO: update the external video to add it to the matching channel
-    logger.warning("TODO: Handle Video additon on Channel")
+    logger.warning("ActivityPub task call ExternalVideo %s creation from channel %s", ap_video, ap_channel)
+    following_domain = urlparse(ap_video["id"]).netloc
+    following = Following.objects.get(object__contains=following_domain)
+    ap_video_to_external_video(payload=ap_video, source_instance=following)
 
 
 def external_video_update(ap_video):
