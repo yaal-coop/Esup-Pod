@@ -11,7 +11,8 @@ from pod.video.models import Video
 
 from .constants import AP_DEFAULT_CONTEXT, AP_PT_VIDEO_CONTEXT, BASE_HEADERS
 from .models import Follower, Following
-from .serialization.video import ap_video_to_external_video, video_to_ap_video
+from .deserialization.video import ap_video_to_external_video
+from .serialization.video import video_to_ap_video
 from .utils import ap_post, ap_url
 
 logger = logging.getLogger(__name__)
@@ -115,7 +116,10 @@ def external_video_added_by_channel(ap_video, ap_channel):
 
 def external_video_update(ap_video):
     # TODO: update the external video details
-    logger.warning("TODO: Deal with Video updates")
+    logger.warning("ActivityPub task call ExternalVideo update")
+    following_domain = urlparse(ap_video["id"]).netloc
+    following = Following.objects.get(object__contains=following_domain)
+    ap_video_to_external_video(payload=ap_video, source_instance=following)
 
 
 def external_video_deletion(ap_video):
