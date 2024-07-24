@@ -33,12 +33,12 @@ def task_follow(following_id):
 
 
 @activitypub_app.task()
-def task_index_videos(following_id):
+def task_index_external_videos(following_id):
     from .models import Following
-    from .network import index_videos
+    from .network import index_external_videos
 
     following = Following.objects.get(id=following_id)
-    return index_videos(following)
+    return index_external_videos(following)
 
 
 @activitypub_app.task()
