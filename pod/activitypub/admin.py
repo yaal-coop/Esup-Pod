@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
 from .models import Follower, Following, ExternalVideo
-from .tasks import task_follow, task_index_videos
+from .tasks import task_follow, task_index_external_videos
 
 USE_ACTIVITYPUB = getattr(settings, "USE_ACTIVITYPUB", True)
 
@@ -24,15 +24,15 @@ def send_federation_request(modeladmin, request, queryset):
 
 
 @admin.action(description=_("Reindex the instance videos"))
-def reindex_videos(modeladmin, request, queryset):
+def reindex_external_videos(modeladmin, request, queryset):
     for following in queryset:
-        task_index_videos.delay(following.id)
+        task_index_external_videos.delay(following.id)
     modeladmin.message_user(request, _("The video indexations have started"))
 
 
 @admin.register(Following)
 class FollowingAdmin(admin.ModelAdmin):
-    actions = [send_federation_request, reindex_videos]
+    actions = [send_federation_request, reindex_external_videos]
     list_display = (
         "object",
         "status",

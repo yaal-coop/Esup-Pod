@@ -3,6 +3,7 @@ import json
 import httmock
 
 from . import ActivityPubTestCase
+from pod.activitypub.models import ExternalVideo
 
 
 class VideoUpdateTest(ActivityPubTestCase):

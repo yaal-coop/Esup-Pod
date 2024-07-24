@@ -11,18 +11,20 @@ from pod.video.models import Video
 
 from .constants import AP_DEFAULT_CONTEXT, AP_PT_VIDEO_CONTEXT, BASE_HEADERS
 from .models import Follower, Following, ExternalVideo
-from .deserialization.video import ap_video_to_external_video
+from pod.activitypub.deserialization.video import update_or_create_external_video
+from pod.activitypub.deserialization.video import create_external_video
+from pod.activitypub.deserialization.video import update_external_video
 from .serialization.video import video_to_ap_video
 from .utils import ap_post, ap_url
 
 logger = logging.getLogger(__name__)
 
 
-def index_videos(following: Following):
+def index_external_videos(following: Following):
     ap_actor = get_instance_application_account_metadata(following.object)
     ap_outbox = ap_object(ap_actor["outbox"])
     if "first" in ap_outbox:
-        index_videos_page(following, ap_outbox["first"])
+        index_external_videos_page(following, ap_outbox["first"])
     return True
 
 
@@ -85,21 +87,21 @@ def send_follow_request(following: Following):
     return response.status_code == 204
 
 
-def index_videos_page(following: Following, page_url):
+def index_external_videos_page(following: Following, page_url):
     """Parse a AP Video page payload, and handle each video."""
     ap_page = ap_object(page_url)
     for item in ap_page["orderedItems"]:
-        index_video(following, item["object"])
+        index_external_video(following, item["object"])
 
     if "next" in ap_page:
-        index_videos_page(following, ap_page["next"])
+        index_external_videos_page(following, ap_page["next"])
 
 
-def index_video(following: Following, video_url):
+def index_external_video(following: Following, video_url):
     """Read a video payload and create an ExternalVideo object"""
     ap_video = ap_object(video_url)
     logger.warning(f"TODO: Deal with video indexation {ap_video}")
-    ap_video_to_external_video(payload=ap_video, source_instance=following)
+    update_or_create_external_video(payload=ap_video, source_instance=following)
 
 
 def external_video_added_by_actor(ap_video, ap_actor):
@@ -107,7 +109,11 @@ def external_video_added_by_actor(ap_video, ap_actor):
     logger.warning("ActivityPub task call ExternalVideo %s creation from actor %s", ap_video, ap_actor)
     following_domain = urlparse(ap_video["id"]).netloc
     following = Following.objects.get(object__contains=following_domain)
-    ap_video_to_external_video(payload=ap_video, source_instance=following)
+    try:
+        ExternalVideo.objects.get(ap_id=ap_video["id"])
+        logger.warning("Received an ActivityPub create event from actor %s on an already existing ExternalVideo %s", ap_actor["id"], ap_video["id"])
+    except ExternalVideo.DoesNotExist:
+        create_external_video(payload=ap_video, source_instance=following)
 
 
 def external_video_added_by_channel(ap_video, ap_channel):
@@ -115,14 +121,22 @@ def external_video_added_by_channel(ap_video, ap_channel):
     logger.warning("ActivityPub task call ExternalVideo %s creation from channel %s", ap_video, ap_channel)
     following_domain = urlparse(ap_video["id"]).netloc
     following = Following.objects.get(object__contains=following_domain)
-    ap_video_to_external_video(payload=ap_video, source_instance=following)
+    try:
+        ExternalVideo.objects.get(ap_id=ap_video["id"])
+        logger.warning("Received an ActivityPub create event from channel %s on an already existing ExternalVideo %s", ap_channel["id"], ap_video["id"])
+    except ExternalVideo.DoesNotExist:
+        create_external_video(payload=ap_video, source_instance=following)
 
 
 def external_video_update(ap_video):
     logger.warning("ActivityPub task call ExternalVideo %s update", ap_video["id"])
     following_domain = urlparse(ap_video["id"]).netloc
     following = Following.objects.get(object__contains=following_domain)
-    ap_video_to_external_video(payload=ap_video, source_instance=following)
+    try:
+        e_video_to_update = ExternalVideo.objects.get(ap_id=ap_video["id"])
+        update_external_video(external_video=e_video_to_update, payload=ap_video, source_instance=following)
+    except ExternalVideo.DoesNotExist:
+        logger.warning("Received an ActivityPub update event on a nonexistent ExternalVideo %s", ap_video["id"])
 
 
 def external_video_deletion(ap_video_id):
