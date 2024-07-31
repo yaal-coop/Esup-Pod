@@ -1,14 +1,17 @@
 import json
+import logging
 
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
 from django.template.defaultfilters import slugify
-from django.utils.html import format_html
 from django.urls import reverse
+from django.utils.html import format_html
+from django.utils.translation import ugettext_lazy as _
 
-
-from pod.video.models import BaseVideo
 from pod.main.models import get_nextautoincrement
+from pod.video.models import BaseVideo
+from pod.video.models import __LANG_CHOICES_DICT__
+
+logger = logging.getLogger(__name__)
 
 
 class Follower(models.Model):
@@ -136,3 +139,48 @@ class ExternalVideo(BaseVideo):
         ]
         videos[-1]["selected"] = True
         return json.dumps(videos)
+
+    def get_json_to_index(self):
+        try:
+            data_to_dump = {
+                "id": f"{self.id}_external",
+                "title": "%s" % self.title,
+                "owner": "%s" % self.source_instance.object,
+                "owner_full_name": "%s" % self.source_instance.object,
+                "date_added": (
+                    "%s" % self.date_added.strftime("%Y-%m-%dT%H:%M:%S")
+                    if self.date_added
+                    else None
+                ),
+                "date_evt": (
+                    "%s" % self.date_evt.strftime("%Y-%m-%dT%H:%M:%S")
+                    if self.date_evt
+                    else None
+                ),
+                "description": "%s" % self.description,
+                "thumbnail": "%s" % self.get_thumbnail_url(),
+                "duration": "%s" % self.duration,
+                "tags": [],
+                "type": {},
+                "disciplines": [],
+                "channels": [],
+                "themes": [],
+                "contributors": [],
+                "chapters": [],
+                "overlays": [],
+                "full_url": self.get_absolute_url(),
+                "is_restricted": False,
+                "password": False,
+                "duration_in_time": self.duration_in_time,
+                "mediatype": "video" if self.is_video else "audio",
+                "cursus": "",
+                "main_lang": "%s" % __LANG_CHOICES_DICT__[self.main_lang],
+                "is_external": self.is_external,
+            }
+            return json.dumps(data_to_dump)
+        except ExternalVideo.DoesNotExist as e:
+            logger.error(
+                "An error occured during get_json_to_index"
+                " for external video %s: %s" % (self.id, e)
+            )
+            return json.dumps({})

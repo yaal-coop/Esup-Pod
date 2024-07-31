@@ -1335,6 +1335,7 @@ class Video(BaseVideo):
                 "mediatype": "video" if self.is_video else "audio",
                 "cursus": "%s" % __CURSUS_CODES_DICT__[self.cursus],
                 "main_lang": "%s" % __LANG_CHOICES_DICT__[self.main_lang],
+                "is_external": self.is_external,
             }
             return json.dumps(data_to_dump)
         except ObjectDoesNotExist as e:
