@@ -228,7 +228,7 @@ def is_sort_field_usable(sort_field: str):
     }
 
 
-def sort_videos_list(videos_list: QuerySet, sort_field: str, sort_direction: str = ""):
+def sort_videos_queryset(videos_list: QuerySet, sort_field: str, sort_direction: str = ""):
     """Return videos list sorted by sort_field.
 
     Sorted by specific column name and ascending or descending direction
