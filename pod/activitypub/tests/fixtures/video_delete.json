@@ -14,9 +14,9 @@
     ],
     "cc": [],
     "type": "Delete",
-    "id": "http://peertube.test/videos/watch/74b35c2c-5b41-47ee-b331-86ec80f317d8/delete",
+    "id": "http://peertube.test/videos/watch/717c9d87-c912-4943-a392-49fadf2f235d/delete",
     "actor": "http://peertube.test/accounts/root",
-    "object": "http://peertube.test/videos/watch/74b35c2c-5b41-47ee-b331-86ec80f317d8",
+    "object": "http://peertube.test/videos/watch/717c9d87-c912-4943-a392-49fadf2f235d",
     "signature": {
         "type": "RsaSignature2017",
         "creator": "http://peertube.test/accounts/root",
