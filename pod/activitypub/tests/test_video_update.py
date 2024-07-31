@@ -23,6 +23,8 @@ class VideoUpdateTest(ActivityPubTestCase):
         ) as fd:
             account_announce_payload = json.load(fd)
 
+        assert not len(ExternalVideo.objects.all())
+
         with httmock.HTTMock(self.mock_application_actor, self.mock_get_video):
             response = self.client.post(
                 "/ap/inbox",
@@ -32,6 +34,7 @@ class VideoUpdateTest(ActivityPubTestCase):
             )
             self.assertEqual(response.status_code, 204)
 
+        assert len(ExternalVideo.objects.all()) == 1
         # TODO: assert ExternalVideo is created
 
         with open(
@@ -66,6 +69,24 @@ class VideoUpdateTest(ActivityPubTestCase):
     def test_video_update(self):
         """Test the video update activity on the inbox"""
 
+        with open(
+            "pod/activitypub/tests/fixtures/video_creation_account_announce.json"
+        ) as fd:
+            account_announce_payload = json.load(fd)
+
+        assert not len(ExternalVideo.objects.all())
+
+        with httmock.HTTMock(self.mock_application_actor, self.mock_get_video):
+            response = self.client.post(
+                "/ap/inbox",
+                json.dumps(account_announce_payload),
+                content_type="application/json",
+                **self.headers,
+            )
+            self.assertEqual(response.status_code, 204)
+
+        assert ExternalVideo.objects.first().title == "Titre de la vidéo"
+
         with open("pod/activitypub/tests/fixtures/video_update.json") as fd:
             payload = json.load(fd)
 
@@ -77,10 +98,28 @@ class VideoUpdateTest(ActivityPubTestCase):
         )
         self.assertEqual(response.status_code, 204)
 
-        # TODO: assert ExternalVideo is updated
+        assert ExternalVideo.objects.first().title == "terre"
 
     def test_video_delete(self):
         """Test the video update activity on the inbox"""
+
+        with open(
+            "pod/activitypub/tests/fixtures/video_creation_account_announce.json"
+        ) as fd:
+            account_announce_payload = json.load(fd)
+
+        assert not len(ExternalVideo.objects.all())
+
+        with httmock.HTTMock(self.mock_application_actor, self.mock_get_video):
+            response = self.client.post(
+                "/ap/inbox",
+                json.dumps(account_announce_payload),
+                content_type="application/json",
+                **self.headers,
+            )
+            self.assertEqual(response.status_code, 204)
+
+        assert len(ExternalVideo.objects.all()) == 1
 
         with open("pod/activitypub/tests/fixtures/video_delete.json") as fd:
             payload = json.load(fd)
@@ -94,4 +133,4 @@ class VideoUpdateTest(ActivityPubTestCase):
             )
             self.assertEqual(response.status_code, 204)
 
-            # TODO: assert ExternalVideo is deleted
+        assert not len(ExternalVideo.objects.all())
