@@ -38,7 +38,6 @@ class AdminActivityPubTestCase(ActivityPubTestCase):
     def test_reindex_videos(self):
         """Nominal case test for the admin 'reindex_videos' action."""
 
-
         with httmock.HTTMock(
             self.mock_nodeinfo,
             self.mock_application_actor,
