@@ -90,7 +90,6 @@ from django.db import IntegrityError
 from django.db.models import QuerySet
 from django.db import transaction
 
-from ..ai_enhancement.utils import enhancement_is_already_asked
 from pod.activitypub.context_processors import get_available_external_videos
 
 RESTRICT_EDIT_VIDEO_ACCESS_TO_STAFF_ONLY = getattr(
