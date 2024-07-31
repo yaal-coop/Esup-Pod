@@ -1,7 +1,9 @@
+import logging
+
+from dateutil.parser import isoparse
+
 from pod.activitypub.models import ExternalVideo
 from pod.video.models import LANG_CHOICES
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +43,7 @@ def format_ap_video_data(payload, source_instance):
         "ap_id": payload["id"],
         "videos": video_source_links,
         "title": payload["name"],
-        "date_added": payload["published"],
+        "date_added": isoparse(payload["published"]),
         "thumbnail": [icon for icon in payload["icon"] if "thumbnails" in icon["url"]][0][
             "url"
         ],
