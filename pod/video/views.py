@@ -74,6 +74,7 @@ from .utils import (
 )
 from .context_processors import get_available_videos
 from .utils import sort_videos_list
+from .utils import sort_medias_list
 
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.core.exceptions import ObjectDoesNotExist
@@ -927,14 +928,15 @@ def videos(request):
     sort_field = request.GET.get("sort") if request.GET.get("sort") else "date_added"
     sort_direction = request.GET.get("sort_direction")
 
-    videos_list = list(sort_videos_list(videos_list, sort_field, sort_direction)) + list(
-        external_video_list
-    )  # TODO: Check performance
+    if external_video_list:
+        media_list = sort_medias_list(list(videos_list) + list(external_video_list), sort_field, sort_direction)
+    else:
+        media_list = sort_videos_list(videos_list, sort_field, sort_direction)
 
     if not sort_field:
         # Get the default Video ordering
         sort_field = Video._meta.ordering[0].lstrip("-")
-    count_videos = len(videos_list)
+    count_medias = len(media_list)
 
     page = request.GET.get("page", 1)
     if page == "" or page is None:
@@ -947,8 +949,8 @@ def videos(request):
             .replace("&page=%s" % page, "")
         )
 
-    paginator = Paginator(videos_list, 12)
-    videos = get_paginated_videos(paginator, page)
+    paginator = Paginator(media_list, 12)
+    medias = get_paginated_videos(paginator, page)
     ownersInstances = get_owners_has_instances(request.GET.getlist("owner"))
     owner_filter = owner_is_searchable(request.user)
 
@@ -957,9 +959,9 @@ def videos(request):
             request,
             "videos/video_list.html",
             {
-                "videos": videos,
+                "videos": medias,
                 "full_path": full_path,
-                "count_videos": count_videos,
+                "count_videos": count_medias,
                 "owner_filter": owner_filter,
             },
         )
@@ -967,8 +969,8 @@ def videos(request):
         request,
         "videos/videos.html",
         {
-            "videos": videos,
-            "count_videos": count_videos,
+            "videos": medias,
+            "count_videos": count_medias,
             "types": request.GET.getlist("type"),
             "owners": request.GET.getlist("owner"),
             "disciplines": request.GET.getlist("discipline"),
