@@ -3,7 +3,7 @@ import json
 
 from . import ActivityPubTestCase
 
-from pod.activitypub.deserialization.video import ap_video_to_external_video
+from pod.activitypub.deserialization.video import create_external_video
 
 
 class VideoDiscoveryTest(ActivityPubTestCase):
@@ -12,7 +12,7 @@ class VideoDiscoveryTest(ActivityPubTestCase):
         with open("pod/activitypub/tests/fixtures/peertube_video.json") as fd:
             payload = json.load(fd)
 
-        video = ap_video_to_external_video(payload, source_instance=self.peertube_test_following)
+        video = create_external_video(payload, source_instance=self.peertube_test_following)
 
         assert (
             video.ap_id
