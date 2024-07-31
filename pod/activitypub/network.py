@@ -145,9 +145,12 @@ def external_video_update(ap_video):
 
 def external_video_deletion(ap_video_id):
     logger.warning("ActivityPub task call ExternalVideo %s delete", ap_video_id)
-    external_video_to_delete = ExternalVideo.objects.get(ap_id=ap_video_id)
-    delete_es(media=external_video_to_delete)
-    external_video_to_delete.delete()
+    try:
+        external_video_to_delete = ExternalVideo.objects.get(ap_id=ap_video_id)
+        delete_es(media=external_video_to_delete)
+        external_video_to_delete.delete()
+    except ExternalVideo.DoesNotExist:
+        logger.warning("Received an ActivityPub delete event on a nonexistent ExternalVideo %s", ap_video_id)
 
 
 def send_video_announce_object(video: Video, follower: Follower):
