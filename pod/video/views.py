@@ -72,7 +72,7 @@ from .utils import (
     get_id_from_request,
 )
 from .context_processors import get_available_videos
-from .utils import sort_videos_list
+from .utils import sort_videos_queryset
 from .utils import sort_medias_list
 
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -605,7 +605,7 @@ def dashboard(request):
     filtered_videos_list = get_filtered_videos_list(request, videos_list)
     sort_field = request.GET.get("sort") if request.GET.get("sort") else "date_added"
     sort_direction = request.GET.get("sort_direction")
-    sorted_videos_list = sort_videos_list(
+    sorted_videos_list = sort_videos_queryset(
         filtered_videos_list, sort_field, sort_direction
     )
     ownersInstances = get_owners_has_instances(request.GET.getlist("owner"))
@@ -966,7 +966,7 @@ def videos(request):
     if external_video_list:
         media_list = sort_medias_list(list(videos_list) + list(external_video_list), sort_field, sort_direction)
     else:
-        media_list = sort_videos_list(videos_list, sort_field, sort_direction)
+        media_list = sort_videos_queryset(videos_list, sort_field, sort_direction)
 
     if not sort_field:
         # Get the default Video ordering
@@ -1119,7 +1119,7 @@ def video(request, slug, slug_c=None, slug_t=None, slug_private=None):
         if playlist_can_be_displayed(request, playlist) and user_can_see_playlist_video(
             request, video, playlist
         ):
-            videos = sort_videos_list(get_video_list_for_playlist(playlist), "rank")
+            videos = sort_videos_queryset(get_video_list_for_playlist(playlist), "rank")
             params = {
                 "playlist_in_get": playlist,
                 "videos": videos,
