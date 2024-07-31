@@ -13,7 +13,7 @@ from django.template.defaultfilters import slugify
 from pod.main.models import get_nextautoincrement
 from pod.video.models import Video
 from pod.activitypub.models import ExternalVideo
-from pod.video.utils import sort_videos_list
+from pod.video.utils import sort_videos_queryset
 
 
 SITE_ID = getattr(settings, "SITE_ID")
@@ -164,10 +164,10 @@ class Playlist(models.Model):
         from .utils import get_video_list_for_playlist, user_can_see_playlist_video
 
         if request is not None:
-            for video in sort_videos_list(get_video_list_for_playlist(self), "rank"):
+            for video in sort_videos_queryset(get_video_list_for_playlist(self), "rank"):
                 if user_can_see_playlist_video(request, video, self):
                     return video
-        return sort_videos_list(get_video_list_for_playlist(self), "rank").first()
+        return sort_videos_queryset(get_video_list_for_playlist(self), "rank").first()
 
 
 class PlaylistContent(models.Model):
