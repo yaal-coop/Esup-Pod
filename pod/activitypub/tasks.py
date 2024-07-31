@@ -113,7 +113,7 @@ def task_handle_inbox_delete(username, data):
     if data["type"] == "Delete":
         return external_video_deletion(ap_video_id=data["object"])
 
-    logger.debug("Ignoring inbox 'Delete' action for '%s' object", obj["type"])
+    logger.debug("Ignoring inbox 'Delete' action for '%s' object", data["type"])
 
 
 @activitypub_app.task()
