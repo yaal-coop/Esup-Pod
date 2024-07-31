@@ -758,6 +758,16 @@ class BaseVideo(models.Model):
 
     duration_in_time.fget.short_description = _("Duration")
 
+    def get_absolute_url(self):
+        pass
+
+    def get_full_url(self, request=None) -> str:
+        """Get the video full URL."""
+        full_url = "".join(
+            ["//", get_current_site(request).domain, self.get_absolute_url()]
+        )
+        return full_url
+
 
 class Video(BaseVideo):
     """Class describing video objects."""
@@ -1191,13 +1201,6 @@ class Video(BaseVideo):
     def get_absolute_url(self) -> str:
         """Get the video absolute URL."""
         return reverse("video:video", args=[str(self.slug)])
-
-    def get_full_url(self, request=None) -> str:
-        """Get the video full URL."""
-        full_url = "".join(
-            ["//", get_current_site(request).domain, self.get_absolute_url()]
-        )
-        return full_url
 
     def get_hashkey(self) -> str:
         return hashlib.sha256(
