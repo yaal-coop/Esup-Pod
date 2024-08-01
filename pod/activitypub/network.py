@@ -24,7 +24,7 @@ def index_external_videos(following: Following):
     ap_actor = get_instance_application_account_metadata(following.object)
     ap_outbox = ap_object(ap_actor["outbox"])
     if "first" in ap_outbox:
-        index_external_videos_page(following, ap_outbox["first"])
+        index_external_videos_page(following, ap_outbox["first"], [])
     return True
 
 
@@ -87,14 +87,18 @@ def send_follow_request(following: Following):
     return response.status_code == 204
 
 
-def index_external_videos_page(following: Following, page_url):
+def index_external_videos_page(following: Following, page_url, indexed_external_videos=[]):
     """Parse a AP Video page payload, and handle each video."""
     ap_page = ap_object(page_url)
     for item in ap_page["orderedItems"]:
-        index_external_video(following, item["object"])
+        indexed_external_videos.append(index_external_video(following, item["object"]))
 
     if "next" in ap_page:
-        index_external_videos_page(following, ap_page["next"])
+        index_external_videos_page(following, ap_page["next"], indexed_external_videos)
+    print("COUCOUCOUCOUCOUCOUCOUC")
+    print(indexed_external_videos)
+    ExternalVideo.objects.filter(source_instance=following).exclude(ap_id__in=indexed_external_videos).delete()
+    print("BLABLABLABLABLABLABLA")
 
 
 def index_external_video(following: Following, video_url):
@@ -103,6 +107,7 @@ def index_external_video(following: Following, video_url):
     logger.warning(f"TODO: Deal with video indexation {ap_video}")
     external_video = update_or_create_external_video(payload=ap_video, source_instance=following)
     index_es(media=external_video)
+    return external_video.ap_id
 
 
 def external_video_added_by_actor(ap_video, ap_actor):
