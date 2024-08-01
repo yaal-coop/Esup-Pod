@@ -68,7 +68,7 @@ class AdminActivityPubTestCase(ActivityPubTestCase):
             self.assertTrue(index_external_videos.called)
 
     def test_check_missing_external_videos_are_deleted_on_reindexation(self):
-        """Nominal case test for the admin 'reindex_external_videos' action."""
+        """Reindexation should delete missing ExternalVideo on following instance."""
 
         with open("pod/activitypub/tests/fixtures/peertube_video.json") as fd:
             payload = json.load(fd)
