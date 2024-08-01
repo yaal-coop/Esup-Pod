@@ -155,7 +155,7 @@ def get_dest_email(owner, video, form_subject, request):
     # Soit le owner a été spécifié
     # Soit on le récupere via la video
     # v_owner = instance de User
-    v_owner = owner if (owner) else getattr(video, "owner", None) if not video.is_external else None
+    v_owner = owner if (owner) else getattr(video, "owner", None) if video and not video.is_external else None
     # Si ni le owner ni la video a été renseigné
     if not v_owner:
         # Vérifier si l'utilisateur est authentifié
