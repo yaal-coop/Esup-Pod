@@ -35,8 +35,8 @@ class AdminActivityPubTestCase(ActivityPubTestCase):
         self.peertube_test_following.refresh_from_db()
         self.assertEqual(self.peertube_test_following.status, Following.Status.REQUESTED)
 
-    def test_reindex_videos(self):
-        """Nominal case test for the admin 'reindex_videos' action."""
+    def test_reindex_external_videos(self):
+        """Nominal case test for the admin 'reindex_external_videos' action."""
 
         with httmock.HTTMock(
             self.mock_nodeinfo,
@@ -44,12 +44,12 @@ class AdminActivityPubTestCase(ActivityPubTestCase):
             self.mock_outbox,
             self.mock_get_video,
         ), patch(
-            "pod.activitypub.network.ap_video_to_external_video"
-        ) as ap_video_to_external_video:
+            "pod.activitypub.network.update_or_create_external_video"
+        ) as update_or_create_external_video:
             response = self.client.post(
                 "/admin/activitypub/following/",
                 {
-                    "action": "reindex_videos",
+                    "action": "reindex_external_videos",
                     "_selected_action": [
                         str(self.peertube_test_following.id),
                     ],
@@ -61,4 +61,4 @@ class AdminActivityPubTestCase(ActivityPubTestCase):
                 str(list(response.context["messages"])[0]),
                 "The video indexations have started",
             )
-            self.assertTrue(ap_video_to_external_video.called)
+            self.assertTrue(update_or_create_external_video.called)
