@@ -95,10 +95,7 @@ def index_external_videos_page(following: Following, page_url, indexed_external_
 
     if "next" in ap_page:
         index_external_videos_page(following, ap_page["next"], indexed_external_videos)
-    print("COUCOUCOUCOUCOUCOUCOUC")
-    print(indexed_external_videos)
     ExternalVideo.objects.filter(source_instance=following).exclude(ap_id__in=indexed_external_videos).delete()
-    print("BLABLABLABLABLABLABLA")
 
 
 def index_external_video(following: Following, video_url):
