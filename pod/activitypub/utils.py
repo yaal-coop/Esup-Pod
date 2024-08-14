@@ -5,15 +5,17 @@ import random
 import uuid
 from collections import namedtuple
 from urllib.parse import urlencode, urlunparse
+from Crypto.PublicKey import RSA
 
 import requests
 from django.conf import settings
+from django.urls import reverse
 from django.contrib.sites.models import Site
 
 from pod.video.models import Video
 
 from .constants import AP_REQUESTS_TIMEOUT, BASE_HEADERS
-from .signature import signature_payload, signed_payload_headers
+from .signature import build_signature_payload, build_signature_headers
 
 logger = logging.getLogger(__name__)
 URLComponents = namedtuple(
@@ -109,8 +111,11 @@ def ap_post(url, payload, **kwargs):
         "Posting to AP endpoint: %s\n%s", url, json.dumps(payload, indent=True)
     )
 
-    payload["signature"] = signature_payload(payload, url)
-    signature_headers = signed_payload_headers(payload, url)
+    private_key = RSA.import_key(settings.ACTIVITYPUB_PRIVATE_KEY)
+    public_key_url = ap_url(reverse("activitypub:account")) + "#main-key"
+
+    payload["signature"] = build_signature_payload(private_key, payload)
+    signature_headers = build_signature_headers(private_key, public_key_url, payload, url)
     headers = kwargs.pop("headers", {})
     timeout = kwargs.pop("timeout", AP_REQUESTS_TIMEOUT)
     response = requests.post(
