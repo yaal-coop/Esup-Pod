@@ -15,7 +15,12 @@ from django.contrib.sites.models import Site
 from pod.video.models import Video
 
 from .constants import AP_REQUESTS_TIMEOUT, BASE_HEADERS
-from .signature import build_signature_payload, build_signature_headers
+from .signature import (
+    build_signature_payload,
+    build_signature_headers,
+    check_signature_payload,
+    check_signature_headers,
+)
 
 logger = logging.getLogger(__name__)
 URLComponents = namedtuple(
@@ -115,7 +120,9 @@ def ap_post(url, payload, **kwargs):
     public_key_url = ap_url(reverse("activitypub:account")) + "#main-key"
 
     payload["signature"] = build_signature_payload(private_key, payload)
-    signature_headers = build_signature_headers(private_key, public_key_url, payload, url)
+    signature_headers = build_signature_headers(
+        private_key, public_key_url, payload, url
+    )
     headers = kwargs.pop("headers", {})
     timeout = kwargs.pop("timeout", AP_REQUESTS_TIMEOUT)
     response = requests.post(
@@ -126,3 +133,29 @@ def ap_post(url, payload, **kwargs):
         **kwargs,
     )
     return response
+
+
+def check_signatures(request):
+    """Check the signatures from incoming requests."""
+
+    # Reading the incoming request public key may
+    # be slow due to the subsequent requests.
+    # Some kind of caching might be useful here.
+
+    payload = json.loads(request.body.decode())
+    ap_actor = ap_object(payload["actor"])
+    ap_pubkey = ap_object(ap_actor["publicKey"])
+    ap_pubkey_pem = ap_pubkey["publicKeyPem"]
+    public_key = RSA.import_key(ap_pubkey_pem)
+
+    try:
+        valid_payload = check_signature_payload(public_key, payload)
+        valid_headers = check_signature_headers(
+            public_key, payload, request.headers, request.get_raw_uri()
+        )
+
+    # abort if any header is missing
+    except (KeyError, ValueError):
+        return False
+
+    return valid_payload and valid_headers
