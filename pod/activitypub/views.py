@@ -33,7 +33,7 @@ from .tasks import (
     task_handle_inbox_update,
     task_handle_inbox_undo,
 )
-from .utils import ap_url
+from .utils import ap_url, check_signatures
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +135,9 @@ def inbox(request, username=None):
 
     data = json.loads(request.body.decode()) if request.body else None
     logger.warning("inbox query: %s", json.dumps(data, indent=True))
-    # TODO: test HTTP signature
+
+    if data["type"] in ("Announce", "Update", "Delete") and not check_signatures(request):
+        return HttpResponse("Signature could not be verified", status=403)
 
     if activitypub_task := TYPE_TASK.get(data["type"], None):
         activitypub_task.delay(username, data)
