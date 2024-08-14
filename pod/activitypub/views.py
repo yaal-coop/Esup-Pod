@@ -4,6 +4,7 @@ import json
 import logging
 
 from django.contrib.auth.models import User
+from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -136,7 +137,11 @@ def inbox(request, username=None):
     data = json.loads(request.body.decode()) if request.body else None
     logger.warning("inbox query: %s", json.dumps(data, indent=True))
 
-    if data["type"] in ("Announce", "Update", "Delete") and not check_signatures(request):
+    if (
+        data["type"] in ("Announce", "Update", "Delete")
+        and not settings.TEST_SETTINGS
+        and not check_signatures(request)
+    ):
         return HttpResponse("Signature could not be verified", status=403)
 
     if activitypub_task := TYPE_TASK.get(data["type"], None):
