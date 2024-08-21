@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 import requests
 from django.urls import reverse
+from django.core.exceptions import PermissionDenied
 
 from pod.activitypub.constants import (AP_DEFAULT_CONTEXT, AP_PT_VIDEO_CONTEXT,
                                        BASE_HEADERS)
@@ -101,7 +102,6 @@ def index_external_videos_page(following: Following, page_url, indexed_external_
 def index_external_video(following: Following, video_url):
     """Read a video payload and create an ExternalVideo object"""
     ap_video = ap_object(video_url)
-    logger.warning(f"TODO: Deal with video indexation {ap_video}")
     external_video = update_or_create_external_video(payload=ap_video, source_instance=following)
     index_es(media=external_video)
     return external_video.ap_id
@@ -110,49 +110,76 @@ def index_external_video(following: Following, video_url):
 def external_video_added_by_actor(ap_video, ap_actor):
     # Announce for a Video created by a user account
     logger.warning("ActivityPub task call ExternalVideo %s creation from actor %s", ap_video, ap_actor)
-    following_domain = urlparse(ap_video["id"]).netloc
-    following = Following.objects.get(object__contains=following_domain)
     try:
-        ExternalVideo.objects.get(ap_id=ap_video["id"])
-        logger.warning("Received an ActivityPub create event from actor %s on an already existing ExternalVideo %s", ap_actor["id"], ap_video["id"])
+        plausible_following = get_related_following(ap_actor=ap_actor["id"])
+        existing_e_video = get_external_video_with_related_following(ap_video_id=ap_video["id"], plausible_following=plausible_following)
+        logger.warning("Received an ActivityPub create event from actor %s on an already existing ExternalVideo %s", ap_actor["id"], existing_e_video.id)
+    except Following.DoesNotExist:
+        logger.warning("Received an ActivityPub create event from unknown actor %s", ap_actor["id"])
+    except PermissionDenied:
+        logger.warning("Actor %s cannot execute ActivityPub actions", plausible_following.object)
     except ExternalVideo.DoesNotExist:
-        external_video = create_external_video(payload=ap_video, source_instance=following)
+        external_video = create_external_video(payload=ap_video, source_instance=plausible_following)
         index_es(media=external_video)
 
 
 def external_video_added_by_channel(ap_video, ap_channel):
     # Announce for a Video added to a channel
     logger.warning("ActivityPub task call ExternalVideo %s creation from channel %s", ap_video, ap_channel)
-    following_domain = urlparse(ap_video["id"]).netloc
-    following = Following.objects.get(object__contains=following_domain)
     try:
-        ExternalVideo.objects.get(ap_id=ap_video["id"])
-        logger.warning("Received an ActivityPub create event from channel %s on an already existing ExternalVideo %s", ap_channel["id"], ap_video["id"])
+        plausible_following = get_related_following(ap_actor=ap_channel["id"])
+        existing_e_video = get_external_video_with_related_following(ap_video_id=ap_video["id"], plausible_following=plausible_following)
+        logger.warning("Received an ActivityPub create event from channel %s on an already existing ExternalVideo %s", ap_channel["id"], existing_e_video.id)
+    except Following.DoesNotExist:
+        logger.warning("Received an ActivityPub create event from unknown channel %s", ap_channel["id"])
+    except PermissionDenied:
+        logger.warning("Actor %s cannot execute ActivityPub actions", plausible_following.object)
     except ExternalVideo.DoesNotExist:
-        external_video = create_external_video(payload=ap_video, source_instance=following)
+        external_video = create_external_video(payload=ap_video, source_instance=plausible_following)
         index_es(media=external_video)
 
 
-def external_video_update(ap_video):
+def external_video_update(ap_video, ap_actor):
     logger.warning("ActivityPub task call ExternalVideo %s update", ap_video["id"])
-    following_domain = urlparse(ap_video["id"]).netloc
-    following = Following.objects.get(object__contains=following_domain)
     try:
-        e_video_to_update = ExternalVideo.objects.get(ap_id=ap_video["id"])
-        external_video = update_external_video(external_video=e_video_to_update, payload=ap_video, source_instance=following)
+        plausible_following = get_related_following(ap_actor=ap_actor)
+        e_video_to_update = get_external_video_with_related_following(ap_video_id=ap_video["id"], plausible_following=plausible_following)
+        external_video = update_external_video(external_video=e_video_to_update, payload=ap_video, source_instance=plausible_following)
         index_es(media=external_video)
+    except Following.DoesNotExist:
+        logger.warning("Received an ActivityPub update event from unknown actor %s", ap_actor)
+    except PermissionDenied:
+        logger.warning("Actor %s cannot execute ActivityPub actions", plausible_following.object)
     except ExternalVideo.DoesNotExist:
         logger.warning("Received an ActivityPub update event on a nonexistent ExternalVideo %s", ap_video["id"])
 
 
-def external_video_deletion(ap_video_id):
+def external_video_deletion(ap_video_id, ap_actor):
     logger.warning("ActivityPub task call ExternalVideo %s delete", ap_video_id)
     try:
-        external_video_to_delete = ExternalVideo.objects.get(ap_id=ap_video_id)
+        plausible_following = get_related_following(ap_actor=ap_actor)
+        external_video_to_delete = get_external_video_with_related_following(ap_video_id=ap_video_id, plausible_following=plausible_following)
         delete_es(media=external_video_to_delete)
         external_video_to_delete.delete()
+    except Following.DoesNotExist:
+        logger.warning("Received an ActivityPub delete event from unknown actor %s", ap_actor)
+    except PermissionDenied:
+        logger.warning("Actor %s cannot execute ActivityPub actions", plausible_following.object)
     except ExternalVideo.DoesNotExist:
-        logger.warning("Received an ActivityPub delete event on a nonexistent ExternalVideo %s", ap_video_id)
+        logger.warning("Received an ActivityPub delete event on a nonexistent ExternalVideo %s from actor %s", ap_video_id, plausible_following.object)
+
+
+def get_related_following(ap_actor):
+    actor_domain = "{uri.scheme}://{uri.netloc}".format(uri=urlparse(ap_actor))
+    actor = Following.objects.get(object__startswith=actor_domain)
+    return actor
+
+
+def get_external_video_with_related_following(ap_video_id, plausible_following):
+    if not plausible_following.status == Following.Status.ACCEPTED:
+        raise PermissionDenied
+    external_video = ExternalVideo.objects.get(ap_id=ap_video_id, source_instance=plausible_following)
+    return external_video
 
 
 def send_video_announce_object(video: Video, follower: Follower):

@@ -79,7 +79,10 @@ class ActivityPubTestCase(TestCase):
             rendition=self.vr,
         )
         self.peertube_test_following = Following.objects.create(
-            object="http://peertube.test", status=Following.Status.NONE
+            object="http://peertube.test", status=Following.Status.ACCEPTED
+        )
+        self.other_peertube_test_following = Following.objects.create(
+            object="http://other_peertube.test", status=Following.Status.ACCEPTED
         )
 
     def tearDown(self):

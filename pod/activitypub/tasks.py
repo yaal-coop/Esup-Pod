@@ -101,7 +101,7 @@ def task_handle_inbox_update(username, data):
 
     obj = ap_object(data["object"])
     if obj["type"] == "Video":
-        return external_video_update(ap_video=obj)
+        return external_video_update(ap_video=obj, ap_actor=data["actor"])
 
     logger.debug("Ignoring inbox 'Update' action for '%s' object", obj["type"])
 
@@ -111,7 +111,7 @@ def task_handle_inbox_delete(username, data):
     from .network import external_video_deletion
 
     if data["type"] == "Delete":
-        return external_video_deletion(ap_video_id=data["object"])
+        return external_video_deletion(ap_video_id=data["object"], ap_actor=data["actor"])
 
     logger.debug("Ignoring inbox 'Delete' action for '%s' object", data["type"])
 
