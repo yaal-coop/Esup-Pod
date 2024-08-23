@@ -88,10 +88,6 @@ def webfinger(request):
     https://www.rfc-editor.org/rfc/rfc7033.html
     https://docs.joinmastodon.org/spec/webfinger/
     """
-
-    # TODO: check that this is even needed
-    # TODO: reject accounts that are not peertube@THISDOMAIN
-
     resource = request.GET.get("resource", "")
     if resource:
         response = {
@@ -382,7 +378,6 @@ def comments(request, id):
     """
 
     video = get_object_or_404(Video, id=id)
-    # TODO: video.notecomments
     response = {
         "@context": AP_DEFAULT_CONTEXT,
         "id": ap_url(reverse("activitypub:comments", kwargs={"id": video.id})),

@@ -19,5 +19,3 @@ class VideoDiscoveryTest(ActivityPubTestCase):
             == "http://peertube.test/videos/watch/717c9d87-c912-4943-a392-49fadf2f235d"
         )
         assert len(video.videos) == 8
-
-        # TODO: implement the rest of the test
