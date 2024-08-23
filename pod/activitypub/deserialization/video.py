@@ -67,6 +67,7 @@ def format_ap_video_data(payload, source_instance):
 
 
 def update_or_create_external_video(payload, source_instance):
+    """Create or update external video for activitypub reindexation purposes."""
     external_video_attributes = format_ap_video_data(payload=payload, source_instance=source_instance)
     external_video, created = ExternalVideo.objects.update_or_create(
         ap_id=external_video_attributes["ap_id"],
@@ -90,12 +91,14 @@ def update_or_create_external_video(payload, source_instance):
 
 
 def create_external_video(payload, source_instance):
+    """Create an external video from an activitypub event."""
     external_video_attributes = format_ap_video_data(payload=payload, source_instance=source_instance)
     external_video = ExternalVideo.objects.create(**external_video_attributes)
     return external_video
 
 
 def update_external_video(external_video, payload, source_instance):
+    """Update an external video from an activitypub event."""
     external_video_attributes = format_ap_video_data(payload=payload, source_instance=source_instance)
     for attribute, value in external_video_attributes.items():
         setattr(external_video, attribute, value)

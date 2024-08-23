@@ -10,6 +10,7 @@ class ActivitypubConfig(AppConfig):
     name = "pod.activitypub"
 
     def ready(self):
+        """Set signals on videos for activitypub broadcasting."""
         from pod.video.models import Video
 
         from .signals import on_video_delete, on_video_save, on_video_pre_save

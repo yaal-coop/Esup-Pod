@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def index_external_videos(following: Following):
+    """Process activitypub video pages."""
     ap_actor = get_instance_application_account_metadata(following.object)
     ap_outbox = ap_object(ap_actor["outbox"])
     if "first" in ap_outbox:
@@ -31,7 +32,6 @@ def index_external_videos(following: Following):
 
 def get_instance_application_account_url(url):
     """Read the instance nodeinfo well-known URL to get the main account URL."""
-    # TODO: handle exceptions
     nodeinfo_url = f"{url}/.well-known/nodeinfo"
     response = requests.get(nodeinfo_url, headers=BASE_HEADERS)
     for link in response.json()["links"]:
@@ -46,7 +46,7 @@ def get_instance_application_account_metadata(domain):
 
 
 def handle_incoming_follow(ap_follow):
-    # TODO: test double follows
+    """Process activitypub follow event."""
     actor_account = ap_object(ap_follow["actor"])
     inbox = actor_account["inbox"]
 
@@ -68,10 +68,12 @@ def handle_incoming_follow(ap_follow):
 
 
 def handle_incoming_unfollow(ap_follow):
+    """Remove follower."""
     Follower.objects.filter(actor=ap_follow["actor"]).delete()
 
 
 def send_follow_request(following: Following):
+    """Send follow request to instance."""
     ap_actor = get_instance_application_account_metadata(following.object)
     following_url = ap_url(reverse("activitypub:following"))
     payload = {
@@ -100,7 +102,7 @@ def index_external_videos_page(following: Following, page_url, indexed_external_
 
 
 def index_external_video(following: Following, video_url):
-    """Read a video payload and create an ExternalVideo object"""
+    """Read a video payload and create an ExternalVideo object."""
     ap_video = ap_object(video_url)
     external_video = update_or_create_external_video(payload=ap_video, source_instance=following)
     index_es(media=external_video)
@@ -108,8 +110,8 @@ def index_external_video(following: Following, video_url):
 
 
 def external_video_added_by_actor(ap_video, ap_actor):
-    # Announce for a Video created by a user account
-    logger.warning("ActivityPub task call ExternalVideo %s creation from actor %s", ap_video, ap_actor)
+    """Process video creation from actor event."""
+    logger.info("ActivityPub task call ExternalVideo %s creation from actor %s", ap_video, ap_actor)
     try:
         plausible_following = get_related_following(ap_actor=ap_actor["id"])
         existing_e_video = get_external_video_with_related_following(ap_video_id=ap_video["id"], plausible_following=plausible_following)
@@ -124,8 +126,8 @@ def external_video_added_by_actor(ap_video, ap_actor):
 
 
 def external_video_added_by_channel(ap_video, ap_channel):
-    # Announce for a Video added to a channel
-    logger.warning("ActivityPub task call ExternalVideo %s creation from channel %s", ap_video, ap_channel)
+    """Process video creation from channel event."""
+    logger.info("ActivityPub task call ExternalVideo %s creation from channel %s", ap_video, ap_channel)
     try:
         plausible_following = get_related_following(ap_actor=ap_channel["id"])
         existing_e_video = get_external_video_with_related_following(ap_video_id=ap_video["id"], plausible_following=plausible_following)
@@ -140,7 +142,8 @@ def external_video_added_by_channel(ap_video, ap_channel):
 
 
 def external_video_update(ap_video, ap_actor):
-    logger.warning("ActivityPub task call ExternalVideo %s update", ap_video["id"])
+    """Process video update event."""
+    logger.info("ActivityPub task call ExternalVideo %s update", ap_video["id"])
     try:
         plausible_following = get_related_following(ap_actor=ap_actor)
         e_video_to_update = get_external_video_with_related_following(ap_video_id=ap_video["id"], plausible_following=plausible_following)
@@ -155,7 +158,8 @@ def external_video_update(ap_video, ap_actor):
 
 
 def external_video_deletion(ap_video_id, ap_actor):
-    logger.warning("ActivityPub task call ExternalVideo %s delete", ap_video_id)
+    """Process video delete event."""
+    logger.info("ActivityPub task call ExternalVideo %s delete", ap_video_id)
     try:
         plausible_following = get_related_following(ap_actor=ap_actor)
         external_video_to_delete = get_external_video_with_related_following(ap_video_id=ap_video_id, plausible_following=plausible_following)
@@ -170,12 +174,14 @@ def external_video_deletion(ap_video_id, ap_actor):
 
 
 def get_related_following(ap_actor):
+    """Check actor is indeed followed."""
     actor_domain = "{uri.scheme}://{uri.netloc}".format(uri=urlparse(ap_actor))
     actor = Following.objects.get(object__startswith=actor_domain)
     return actor
 
 
 def get_external_video_with_related_following(ap_video_id, plausible_following):
+    """Check actor has accepted follow and is owner of external video."""
     if not plausible_following.status == Following.Status.ACCEPTED:
         raise PermissionDenied
     external_video = ExternalVideo.objects.get(ap_id=ap_video_id, source_instance=plausible_following)
@@ -183,7 +189,7 @@ def get_external_video_with_related_following(ap_video_id, plausible_following):
 
 
 def send_video_announce_object(video: Video, follower: Follower):
-    # TODO: save the inbox for better performance?
+    """Broadcast video announce."""
     actor_account = ap_object(follower.actor)
     inbox = actor_account["inbox"]
 
@@ -218,7 +224,7 @@ def send_video_announce_object(video: Video, follower: Follower):
 
 
 def send_video_update_object(video: Video, follower: Follower):
-    # TODO: save the inbox for better performance?
+    """Broadcast video update."""
     actor_account = ap_object(follower.actor)
     inbox = actor_account["inbox"]
 
@@ -250,7 +256,7 @@ def send_video_update_object(video: Video, follower: Follower):
 
 
 def send_video_delete_object(video_id, owner_username, follower: Follower):
-    # TODO: save the inbox for better performance?
+    """Broadcast video delete."""
     actor_account = ap_object(follower.actor)
     inbox = actor_account["inbox"]
 
@@ -277,6 +283,7 @@ def send_video_delete_object(video_id, owner_username, follower: Follower):
 
 
 def follow_request_accepted(ap_follow):
+    """Process follow request acceptation."""
     parsed = urlparse(ap_follow["object"])
     obj = f"{parsed.scheme}://{parsed.netloc}"
     follower = Following.objects.get(object=obj)
@@ -285,6 +292,7 @@ def follow_request_accepted(ap_follow):
 
 
 def follow_request_rejected(ap_follow):
+    """Process follow request rejection."""
     parsed = urlparse(ap_follow["object"])
     obj = f"{parsed.scheme}://{parsed.netloc}"
     follower = Following.objects.get(object=obj)

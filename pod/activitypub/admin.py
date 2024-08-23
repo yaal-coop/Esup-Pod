@@ -18,6 +18,7 @@ class FollowerAdmin(admin.ModelAdmin):
 
 @admin.action(description=_("Send the federation request"))
 def send_federation_request(modeladmin, request, queryset):
+    """Send a federation request to selected instances from admin."""
     for following in queryset:
         task_follow.delay(following.id)
     modeladmin.message_user(request, _("The federation requests have been sent"))
@@ -25,6 +26,7 @@ def send_federation_request(modeladmin, request, queryset):
 
 @admin.action(description=_("Reindex the instance videos"))
 def reindex_external_videos(modeladmin, request, queryset):
+    """Reindex all videos from selected instances from admin."""
     for following in queryset:
         task_index_external_videos.delay(following.id)
     modeladmin.message_user(request, _("The video indexations have started"))

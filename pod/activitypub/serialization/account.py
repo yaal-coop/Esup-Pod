@@ -8,6 +8,7 @@ from pod.activitypub.utils import ap_url
 
 
 def account_to_ap_actor(user: Optional[User]):
+    """Serialize account to activitypub actor."""
     url_args = {"username": user.username} if user else {}
     response = {
         "id": ap_url(reverse("activitypub:account", kwargs=url_args)),
