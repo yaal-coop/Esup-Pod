@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def on_video_pre_save(instance, sender, **kwargs):
+    """Create temporary attribute to compare previous state after video save."""
     instance._was_activity_pub_broadcasted = instance.is_activity_pub_broadcasted
     instance.is_activity_pub_broadcasted = instance.is_visible()
 

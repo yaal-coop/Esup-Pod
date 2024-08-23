@@ -93,6 +93,7 @@ class ExternalVideo(BaseVideo):
 
     @property
     def get_thumbnail_admin(self):
+        """Return thumbnail image card of current external video for admin."""
         return format_html(
             '<img style="max-width:100px" '
             'src="%s" alt="%s" loading="lazy">'
@@ -120,7 +121,7 @@ class ExternalVideo(BaseVideo):
         """Get the external video absolute URL."""
         return reverse("activitypub:external_video", args=[str(self.slug)])
 
-    def get_marker_time_for_user(video, user):  # TODO: Check usage
+    def get_marker_time_for_user(video, user):
         return 0
 
     def get_video_mp4_json(self) -> list:
@@ -141,6 +142,7 @@ class ExternalVideo(BaseVideo):
         return json.dumps(videos)
 
     def get_json_to_index(self):
+        """Get json attributes for elasticsearch indexation."""
         try:
             data_to_dump = {
                 "id": f"{self.id}_external",

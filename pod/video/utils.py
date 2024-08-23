@@ -201,6 +201,7 @@ def get_videos(
 
 
 def is_sort_field_usable(sort_field: str):
+    """Check if field is sortable."""
     return sort_field and sort_field in {
         "category",
         "channel",
@@ -242,7 +243,6 @@ def sort_videos_queryset(videos_list: QuerySet, sort_field: str, sort_direction:
         elif not sort_direction:
             sort_field = "-" + sort_field
         videos_list = videos_list.order_by(sort_field)
-    # breakpoint()
     return videos_list.distinct()
 
 

@@ -417,6 +417,7 @@ def chapters(request, id):
 
 
 def render_external_video(request, id):
+    """Render external video."""
     external_video = get_object_or_404(ExternalVideo, id=id)
     return render(
         request,
@@ -433,6 +434,7 @@ def render_external_video(request, id):
 
 
 def external_video(request, slug):
+    """Render a single external video."""
     try:
         id = int(slug[: slug.find("-")])
     except ValueError:

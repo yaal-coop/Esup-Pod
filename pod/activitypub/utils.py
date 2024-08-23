@@ -30,6 +30,7 @@ URLComponents = namedtuple(
 
 
 def make_url(scheme=None, netloc=None, params=None, path="", url="", fragment=""):
+    """Format activitypub url."""
     if scheme is None:
         scheme = "https" if getattr(settings, "SECURE_SSL_REDIRECT") else "http"
 

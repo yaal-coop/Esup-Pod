@@ -1502,6 +1502,7 @@ class Video(BaseVideo):
                     videodir.save()
 
     def is_visible(self):
+        """Check if video is visible for activitypub broadcast."""
         return (
             not self.is_draft
             and self.encoded

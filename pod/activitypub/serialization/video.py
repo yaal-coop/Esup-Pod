@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def video_to_ap_video(video):
+    """Serialize video to activitypub video."""
     return {
         "id": ap_url(reverse("activitypub:video", kwargs={"id": video.id})),
         "to": ["https://www.w3.org/ns/activitystreams#Public"],
