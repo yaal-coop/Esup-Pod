@@ -16,7 +16,6 @@ class VideoUpdateTest(ActivityPubTestCase):
         - one for the video addition on the user channel.
 
         This tests the situation where the account announce is received first.
-        TODO: Check what happens if the messages are received the other way
         """
 
         assert len(ExternalVideo.objects.all()) == 0
@@ -38,7 +37,6 @@ class VideoUpdateTest(ActivityPubTestCase):
             self.assertEqual(response.status_code, 204)
 
         assert len(ExternalVideo.objects.all()) == 1
-        # TODO: assert ExternalVideo is created
 
         with open(
             "pod/activitypub/tests/fixtures/video_creation_channel_announce.json"
@@ -55,7 +53,6 @@ class VideoUpdateTest(ActivityPubTestCase):
             self.assertEqual(response.status_code, 204)
 
         assert len(ExternalVideo.objects.all()) == 1
-        # TODO: assert ExternalVideo is added to the channel
 
     def test_video_creation_fails_for_unfollowed_instance(self):
         """Test video creation activities are ignored for unfollowed instances"""
@@ -82,7 +79,6 @@ class VideoUpdateTest(ActivityPubTestCase):
             self.assertEqual(response.status_code, 204)
 
         assert len(ExternalVideo.objects.all()) == 0
-        # TODO: assert ExternalVideo is created
 
         with open(
             "pod/activitypub/tests/fixtures/video_creation_channel_announce.json"
@@ -99,7 +95,6 @@ class VideoUpdateTest(ActivityPubTestCase):
             self.assertEqual(response.status_code, 204)
 
         assert len(ExternalVideo.objects.all()) == 0
-        # TODO: assert ExternalVideo is added to the channel
 
     def test_video_view(self):
         """Test that View activities are ignored"""
