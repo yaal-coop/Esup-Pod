@@ -6,6 +6,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from django.template.defaultfilters import slugify
 from django.test import TestCase
+from django.conf import settings
 
 from pod.authentication.models import User
 from pod.video.models import VIDEOS_DIR
@@ -14,6 +15,8 @@ from pod.video.models import Type
 from pod.video_encode_transcript.models import VideoRendition
 from pod.video_encode_transcript.models import EncodingVideo
 from pod.activitypub.models import Following
+
+TIME_ZONE = getattr(settings, "TIME_ZONE", "Europe/Paris")
 
 
 class ActivityPubTestCase(TestCase):
@@ -40,10 +43,10 @@ class ActivityPubTestCase(TestCase):
             type=video_type,
             title="Draft video",
             password=None,
-            date_added=datetime.now(ZoneInfo("Europe/Paris")),
+            date_added=datetime.now(ZoneInfo(TIME_ZONE)),
             encoding_in_progress=False,
             owner=self.admin_user,
-            date_evt=datetime.now(ZoneInfo("Europe/Paris")),
+            date_evt=datetime.now(ZoneInfo(TIME_ZONE)),
             video=os.path.join(
                 VIDEOS_DIR,
                 self.admin_user.owner.hashkey,
@@ -61,10 +64,10 @@ class ActivityPubTestCase(TestCase):
             type=video_type,
             title="Visible video",
             password=None,
-            date_added=datetime.now(ZoneInfo("Europe/Paris")),
+            date_added=datetime.now(ZoneInfo(TIME_ZONE)),
             encoding_in_progress=False,
             owner=self.admin_user,
-            date_evt=datetime.now(ZoneInfo("Europe/Paris")),
+            date_evt=datetime.now(ZoneInfo(TIME_ZONE)),
             video=os.path.join(
                 VIDEOS_DIR,
                 self.admin_user.owner.hashkey,

@@ -16,22 +16,23 @@
       </div>
     </div>
   {% endif %}
-{% endif %}
 
-{% if USE_QUIZ and not video.is_external %}
-  {% is_quiz_accessible video as is_quiz_accessible %}
-  {% if is_quiz_accessible or video.owner == request.user or request.user.is_superuser or request.user in video.additional_owners.all %}
-    <div class="card" id="card-manage-quiz">
-      {% include "quiz/video_quiz_aside.html" %}
+  {% if USE_QUIZ %}
+    {% is_quiz_accessible video as is_quiz_accessible %}
+    {% if is_quiz_accessible or video.owner == request.user or request.user.is_superuser or request.user in video.additional_owners.all %}
+      <div class="card" id="card-manage-quiz">
+        {% include "quiz/video_quiz_aside.html" %}
+      </div>
+    {% endif %}
+  {% endif %}
+
+  {# Do not display notes if video is restricted. #}
+  {% if not form %}
+    <div class="card" id="card-takenote">
+      {% include 'videos/video_notes.html' %}
     </div>
   {% endif %}
 {% endif %}
 
-{# Do not display notes if video is restricted. #}
-{% if not form and not video.is_external %}
-  <div class="card" id="card-takenote">
-    {% include 'videos/video_notes.html' %}
-  </div>
-{% endif %}
 
 {% include 'aside.html' %}
