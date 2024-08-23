@@ -44,7 +44,6 @@ class FollowingAdmin(admin.ModelAdmin):
         return USE_ACTIVITYPUB
 
 
-# TODO External video admin
 @admin.register(ExternalVideo)
 class ExternalVideoAdmin(admin.ModelAdmin):
     list_display = (

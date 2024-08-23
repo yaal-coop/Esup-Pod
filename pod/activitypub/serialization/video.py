@@ -56,21 +56,23 @@ def video_name(video):
 
 
 def video_duration(video):
-    """duration must fit the xsd:duration format
+    """
+    Duration must fit the xsd:duration format.
     https://www.w3.org/TR/xmlschema11-2/#duration
     """
     return {"duration": f"PT{video.duration}S"}
 
 
 def video_uuid(video):
-    """needed by peertube 6.1, uuids must be version 4 exactly
+    """
+    Needed by peertube 6.1, uuids must be version 4 exactly.
     https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L76
     """
     return {"uuid": str(stable_uuid(video.id, version=4))}
 
 
 def video_views(video):
-    """needed by peertube"""
+    """Needed by peertube."""
     return {"views": video.viewcount}
 
 
@@ -79,7 +81,7 @@ def video_transcoding(video):
 
 
 def video_comments(video):
-    """the comments endpoint is needed by peertube"""
+    """The comments endpoint is needed by peertube."""
     return {
         "commentsEnabled": not video.disable_comment,
         "comments": ap_url(reverse("activitypub:comments", kwargs={"id": video.id})),
@@ -91,11 +93,7 @@ def video_download(video):
 
 
 def video_dates(video):
-    """
-    'published' and 'updated' are needed by peertube
-
-    TODO: implement "originallyPublishedAt" when federation is implemented on pod side
-    """
+    """The 'published' and 'updated' attributes are needed by peertube."""
     return {
         "published": video.date_added.isoformat(),
         "updated": video.date_added.isoformat(),
@@ -103,10 +101,10 @@ def video_dates(video):
 
 
 def video_tags(video):
-    """tags (even empty) are needed by peertube
+    """Tags (even empty) are needed by peertube.
     https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L148-L157
 
-    they may become fully optional someday
+    They may become fully optional someday.
     https://framacolibri.org/t/comments-and-suggestions-on-the-peertube-activitypub-implementation/21215/2
     """
     return {
@@ -118,10 +116,10 @@ def video_tags(video):
 
 def video_urls(video):
     """
-    peertube needs a matching magnet url for every mp4 url
+    Peertube needs a matching magnet url for every mp4 url.
     https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/lib/activitypub/videos/shared/object-to-model-attributes.ts#L61-L64
 
-    magnets may become fully optional someday
+    Magnets may become fully optional someday.
     https://framacolibri.org/t/comments-and-suggestions-on-the-peertube-activitypub-implementation/21215/2
     """
     return {
@@ -173,11 +171,11 @@ def video_urls(video):
 
 def video_attributions(video):
     """
-    Group and Person attributions are needed by peertube
+    Group and Person attributions are needed by peertube.
     TODO: ask peertube to make this optional
     https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/lib/activitypub/videos/shared/abstract-builder.ts#L47-L52
 
-    This won't change soon
+    This won't change soon...
     https://framacolibri.org/t/comments-and-suggestions-on-the-peertube-activitypub-implementation/21215/2
     """
 
@@ -214,7 +212,8 @@ def video_attributions(video):
 
 
 def video_sensitivity(video):
-    """needed by peertube
+    """
+    Needed by peertube.
 
     This may become optional someday
     https://framacolibri.org/t/comments-and-suggestions-on-the-peertube-activitypub-implementation/21215/2
@@ -225,7 +224,8 @@ def video_sensitivity(video):
 
 
 def video_likes(video):
-    """like and dislikes urls are needed by peertube.
+    """
+    Like and dislikes urls are needed by peertube.
 
     They may become optional someday
     https://framacolibri.org/t/comments-and-suggestions-on-the-peertube-activitypub-implementation/21215/2
@@ -238,7 +238,8 @@ def video_likes(video):
 
 
 def video_shares(video):
-    """shares url is needed by peertube.
+    """
+    Shares url is needed by peertube.
 
     This may become optional someday
     https://framacolibri.org/t/comments-and-suggestions-on-the-peertube-activitypub-implementation/21215/2
@@ -251,8 +252,8 @@ def video_shares(video):
 
 def video_category(video):
     """
-    we could use video.type as AP 'category'
-    but peertube categories are fixed, and identifiers are expected to be integers
+    We could use video.type as AP 'category'
+    but peertube categories are fixed, and identifiers are expected to be integers.
     https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/initializers/constants.ts#L544-L563
     example of expected content:
       "category": {"identifier": "11", "name": "News & Politics & shit"}
@@ -262,8 +263,8 @@ def video_category(video):
 
 def video_state(video):
     """
-    'state' is optional
-    peertube valid values are
+    Attribute 'state' is optional.
+    Peertube valid values are
     https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/packages/models/src/videos/video-state.enum.ts#L1-L12C36
     """
 
@@ -271,19 +272,19 @@ def video_state(video):
 
 
 def video_support(video):
-    """'support' is not managed by pod"""
+    """'support' is not managed by pod."""
     return {}
 
 
 def video_preview(video):
-    """'preview' thumbnails are not supported by pod"""
+    """'preview' thumbnails are not supported by pod."""
     return {}
 
 
 def video_live(video):
     """
     Pod don't support live at the moment, so the following optional fields are ignored
-    isLiveBroadcast, liveSaveReplay, permanentLive, latencyMode, peertubeLiveChat
+    isLiveBroadcast, liveSaveReplay, permanentLive, latencyMode, peertubeLiveChat.
     """
     return {}
 
@@ -315,10 +316,10 @@ def video_chapters(video):
 
 def video_licences(video):
     """
-    peertube needs integers identifiers for licences
+    Peertube needs integers identifiers for licences.
     https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L78
 
-    This may become spdy identifiers like 'by-nd' someday
+    This may become spdy identifiers like 'by-nd' someday.
     https://framacolibri.org/t/comments-and-suggestions-on-the-peertube-activitypub-implementation/21215/2
     """
 
@@ -348,15 +349,15 @@ def video_language(video):
 
 def video_description(video):
     """
-    peertube only supports one language
-    TODO ask for several descriptions in several languages
+    Peertube only supports one language.
+    TODO: ask for several descriptions in several languages
 
-    peertube only supports markdown
+    Peertube only supports markdown.
     https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L182
 
-    text/html may be supported someday
+    'text/html' may be supported someday.
     https://framacolibri.org/t/comments-and-suggestions-on-the-peertube-activitypub-implementation/21215/2
-    This would allow Pod to avoid using markdownify
+    This would allow Pod to avoid using markdownify.
     """
     if not video.description:
         return {}
@@ -369,11 +370,9 @@ def video_description(video):
 
 def video_icon(video):
     """
-    # only image/jpeg is supported on peertube
-    # https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L192
+    Only image/jpeg is supported on peertube.
+    https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L192
     """
-    # if not video.thumbnail:
-    #     return {}
 
     return {
         "icon": [
@@ -383,7 +382,6 @@ def video_icon(video):
                 "width": video.thumbnail.file.width if video.thumbnail else 640,
                 "height": video.thumbnail.file.height if video.thumbnail else 360,
                 # TODO: use the real media type when peertub supports JPEG
-                # "mediaType": video.thumbnail.file_type,
                 "mediaType": "image/jpeg",
             },
         ]
