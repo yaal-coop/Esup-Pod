@@ -24,6 +24,7 @@ ES_OPTIONS = getattr(settings, "ES_OPTIONS", {})
 
 
 class MediaResults(Iterator):
+    """Iterable class that gives pagination information."""
     def __init__(self, sequence, has_next=False, next_page_number=1):
         self._sequence = sequence
         self._index = 0

@@ -5,6 +5,7 @@ from pod.activitypub.utils import ap_url
 
 
 def channel_to_ap_group(channel):
+    """Serialize channel to activitypub group."""
     return {
         "type": "Group",
         "id": ap_url(reverse("activitypub:channel", kwargs={"id": channel.id})),

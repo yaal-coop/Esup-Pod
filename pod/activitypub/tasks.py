@@ -25,6 +25,7 @@ logger = get_task_logger(__name__)
 
 @activitypub_app.task()
 def task_follow(following_id):
+    """Send celery activitypub follow request."""
     from .models import Following
     from .network import send_follow_request
 
@@ -34,6 +35,7 @@ def task_follow(following_id):
 
 @activitypub_app.task()
 def task_index_external_videos(following_id):
+    """Get celery activitypub videos indexation request."""
     from .models import Following
     from .network import index_external_videos
 
@@ -43,6 +45,7 @@ def task_index_external_videos(following_id):
 
 @activitypub_app.task()
 def task_handle_inbox_follow(username, data):
+    """Get celery activitypub follow request."""
     from .network import handle_incoming_follow
 
     return handle_incoming_follow(ap_follow=data)
@@ -50,6 +53,7 @@ def task_handle_inbox_follow(username, data):
 
 @activitypub_app.task()
 def task_handle_inbox_accept(username, data):
+    """Get celery activitypub accept follow request."""
     from pod.activitypub.utils import ap_object
 
     from .network import follow_request_accepted
@@ -63,6 +67,7 @@ def task_handle_inbox_accept(username, data):
 
 @activitypub_app.task()
 def task_handle_inbox_reject(username, data):
+    """Get celery activitypub reject follow request."""
     from pod.activitypub.utils import ap_object
 
     from .network import follow_request_rejected
@@ -76,6 +81,7 @@ def task_handle_inbox_reject(username, data):
 
 @activitypub_app.task()
 def task_handle_inbox_announce(username, data):
+    """Get celery activitypub video announce request."""
     from pod.activitypub.utils import ap_object
 
     from .network import external_video_added_by_actor, external_video_added_by_channel
@@ -95,6 +101,7 @@ def task_handle_inbox_announce(username, data):
 
 @activitypub_app.task()
 def task_handle_inbox_update(username, data):
+    """Get celery activitypub video update request."""
     from pod.activitypub.utils import ap_object
 
     from .network import external_video_update
@@ -108,6 +115,7 @@ def task_handle_inbox_update(username, data):
 
 @activitypub_app.task()
 def task_handle_inbox_delete(username, data):
+    """Get celery activitypub video delete request."""
     from .network import external_video_deletion
 
     if data["type"] == "Delete":
@@ -118,6 +126,7 @@ def task_handle_inbox_delete(username, data):
 
 @activitypub_app.task()
 def task_handle_inbox_undo(username, data):
+    """Get celery activitypub undo request."""
     from pod.activitypub.utils import ap_object
 
     from .network import handle_incoming_unfollow
@@ -131,35 +140,35 @@ def task_handle_inbox_undo(username, data):
 
 @activitypub_app.task()
 def task_broadcast_local_video_creation(video_id):
+    """Send celery activitypub video announce request."""
     from pod.video.models import Video
 
     from .models import Follower
     from .network import send_video_announce_object
 
     video = Video.objects.get(id=video_id)
-    # TODO: maybe delegate in subtasks for better performance?
     for follower in Follower.objects.all():
         send_video_announce_object(video, follower)
 
 
 @activitypub_app.task()
 def task_broadcast_local_video_update(video_id):
+    """Send celery activitypub video update request."""
     from pod.video.models import Video
 
     from .models import Follower
     from .network import send_video_update_object
 
     video = Video.objects.get(id=video_id)
-    # TODO: maybe delegate in subtasks for better performance?
     for follower in Follower.objects.all():
         send_video_update_object(video, follower)
 
 
 @activitypub_app.task()
 def task_broadcast_local_video_deletion(video_id, owner_username):
+    """Send celery activitypub video delete request."""
     from .models import Follower
     from .network import send_video_delete_object
 
-    # TODO: maybe delegate in subtasks for better performance?
     for follower in Follower.objects.all():
         send_video_delete_object(video_id, owner_username, follower)

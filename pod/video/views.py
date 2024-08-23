@@ -3520,6 +3520,7 @@ def get_theme_list_for_specific_channel(request: WSGIRequest, slug: str) -> Json
 
 
 def video_mp4_filename(request, mp4_id, id):
+    """Get video filename for activitypub broadcast and keep it unique for follower instances."""
     video = get_object_or_404(Video, id=id, sites=get_current_site(request))
 
     mp4s = [v for v in video.get_video_mp4() if str(v.id) == mp4_id]
