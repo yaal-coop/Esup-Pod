@@ -55,7 +55,7 @@ CELERY_TO_ENCODE = getattr(settings, "CELERY_TO_ENCODE", False)
 
 ACTIVE_VIDEO_COMMENT = getattr(settings, "ACTIVE_VIDEO_COMMENT", False)
 
-USE_ACTIVITYPUB = getattr(settings, "USE_ACTIVITYPUB", True)
+USE_ACTIVITYPUB = getattr(settings, "USE_ACTIVITYPUB", False)
 
 
 def url_to_edit_object(obj):
