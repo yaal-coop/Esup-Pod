@@ -40,6 +40,7 @@ def get_instance_application_account_url(url):
 
 
 def get_instance_application_account_metadata(domain):
+    """Get activitypub actor data from domain."""
     account_url = get_instance_application_account_url(domain)
     ap_actor = ap_object(account_url)
     return ap_actor
