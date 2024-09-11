@@ -2238,7 +2238,7 @@
                     "description": {},
                     "settings": {
                         "USE_ACTIVITYPUB": {
-                            "default_value": true,
+                            "default_value": false,
                             "description": {
                                 "en": [
                                     ""
