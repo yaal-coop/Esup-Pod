@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from .models import Follower, Following, ExternalVideo
 from .tasks import task_follow, task_index_external_videos
 
-USE_ACTIVITYPUB = getattr(settings, "USE_ACTIVITYPUB", True)
+USE_ACTIVITYPUB = getattr(settings, "USE_ACTIVITYPUB", False)
 
 
 @admin.register(Follower)
