@@ -131,7 +131,7 @@ Then peertube is available at http://peertube.localhost:9000.
 ### Manual AP request
 
 ```shell
-curl -H "Accept: application/activity+json, application/ld+json" -s "http://pod.localhost:9000/accounts/peertube" | jq
+curl -H "Accept: application/activity+json, application/ld+json" -s "http://pod.localhost:8000/accounts/peertube" | jq
 ```
 
 ### Unit tests
