@@ -1,5 +1,7 @@
 """Celery tasks configuration."""
 
+import os
+
 from django.conf import settings
 
 try:
@@ -9,6 +11,8 @@ except ImportError:
 
 from celery import Celery
 from celery.utils.log import get_task_logger
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pod.settings")
 
 ACTIVITYPUB_CELERY_BROKER_URL = getattr(
     settings_local, "ACTIVITYPUB_CELERY_BROKER_URL", ""
