@@ -2271,6 +2271,49 @@
                             "pod_version_end": "",
                             "pod_version_init": "3.9.0"
                         },
+                        "ACTIVITYPUB_CELERY_BROKER_URL": {
+                            "default_value": "",
+                            "description": {
+                                "en": [
+                                    ""
+                                ],
+                                "fr": [
+                                    "Il faut renseigner l’url du redis sur lequel Celery",
+                                    "va chercher les tâches ActivityPub (follow, index, etc.)",
+                                    "par exemple : \"redis://redis.localhost:6379/6\""
+                                ]
+                            },
+                            "pod_version_end": "",
+                            "pod_version_init": "3.9.0"
+                        },
+                        "ACTIVITYPUB_PRIVATE_KEY": {
+                            "default_value": "",
+                            "description": {
+                                "en": [
+                                    ""
+                                ],
+                                "fr": [
+                                    "Une paire de clés RSA doit être générée pour identifier",
+                                    "les instances ActivityPub. Voir \"pod/activitypub/README.md\"."
+                                ]
+                            },
+                            "pod_version_end": "",
+                            "pod_version_init": "3.9.0"
+                        },
+                        "ACTIVITYPUB_PUBLIC_KEY": {
+                            "default_value": "",
+                            "description": {
+                                "en": [
+                                    ""
+                                ],
+                                "fr": [
+                                    "Une paire de clés RSA doit être générée pour identifier",
+                                    "les instances ActivityPub. Voir \"pod/activitypub/README.md\"."
+                                ]
+                            },
+                            "pod_version_end": "",
+                            "pod_version_init": "3.9.0"
+                        },
                     },
                     "title": {
                         "en": "",
@@ -2692,7 +2735,7 @@
                                 ]
                             },
                             "pod_version_end": "",
-                            "pod_version_init": "3.8.2"
+                            "pod_version_init": "3.9.0"
                         },
                         "DEFAULT_TYPE_ID": {
                             "default_value": 1,
