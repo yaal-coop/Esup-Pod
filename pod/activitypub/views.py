@@ -130,22 +130,29 @@ def inbox(request, username=None):
     https://www.w3.org/TR/activitypub/#inbox
     """
 
-    data = json.loads(request.body.decode()) if request.body else None
-    logger.warning("inbox query: %s", json.dumps(data, indent=True))
+    try:
+        data = json.loads(request.body.decode())
+        logger.warning("inbox query: %s", json.dumps(data, indent=True))
 
-    if (
-        data["type"] in ("Announce", "Update", "Delete")
-        and not settings.TEST_SETTINGS
-        and not check_signatures(request)
-    ):
-        return HttpResponse("Signature could not be verified", status=403)
+        if (
+            data["type"] in ("Announce", "Update", "Delete")
+            and not settings.TEST_SETTINGS
+            and not check_signatures(request)
+        ):
+            return HttpResponse("Signature could not be verified", status=403)
 
-    if activitypub_task := TYPE_TASK.get(data["type"], None):
-        activitypub_task.delay(username, data)
-    else:
-        logger.debug("Ignoring inbox action: %s", data["type"])
+        if activitypub_task := TYPE_TASK.get(data["type"], None):
+            activitypub_task.delay(username, data)
+        else:
+            logger.debug("Ignoring inbox action: %s", data["type"])
 
-    return HttpResponse(status=204)
+        return HttpResponse(status=204)
+    except (AttributeError, KeyError, UnicodeError, ValueError) as err:
+        logger.error("ActivityPub inbox request body badly formatted and unusable: %s" % err)
+        return HttpResponse(status=422)
+    except Exception as err:
+        logger.error("ActivityPub inbox request error: %s" % err)
+        return HttpResponse(status=400)
 
 
 @csrf_exempt
