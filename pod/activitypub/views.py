@@ -139,6 +139,7 @@ def inbox(request, username=None):
             and not settings.TEST_SETTINGS
             and not check_signatures(request)
         ):
+            logger.warning("ActivityPub inbox request signature is invalid.")
             return HttpResponse("Signature could not be verified", status=403)
 
         if activitypub_task := TYPE_TASK.get(data["type"], None):
@@ -147,9 +148,11 @@ def inbox(request, username=None):
             logger.debug("Ignoring inbox action: %s", data["type"])
 
         return HttpResponse(status=204)
+
     except (AttributeError, KeyError, UnicodeError, ValueError) as err:
         logger.error("ActivityPub inbox request body badly formatted and unusable: %s" % err)
         return HttpResponse(status=422)
+
     except Exception as err:
         logger.error("ActivityPub inbox request error: %s" % err)
         return HttpResponse(status=400)
