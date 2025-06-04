@@ -105,6 +105,8 @@ services:
       - postgres
       - redis
       - postfix
+    volumes:
+      - ./dockerfile-dev-with-volumes/peertube/dev.yaml:/app/config/dev.yaml
     command: sh -c "yarn install && npm run dev"
     restart: "always"
 
