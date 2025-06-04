@@ -94,7 +94,12 @@
       </div>
     {% endif %}
   {% endif %}
-  {% if video.get_encoding_step == "" %}
+  {% if not video.video %}
+    <div class="alert alert-warning" role="alert">
+      <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+      {% trans 'The form does not contain a video.' %}
+    </div>
+  {% elif video.get_encoding_step == "" %}
     <div class="alert alert-warning" role="alert">
       <i class="bi bi-hourglass-split" aria-hidden="true"></i>
       {% trans 'The video is currently waiting for encoding.' %}
