@@ -241,7 +241,7 @@ class Encoding_video:
         if self.cutting_start != 0 or self.cutting_stop != 0:
             duration = self.cutting_stop - self.cutting_start
         self.duration = duration
-        streams = info.get("streams", [])
+        streams = info.get("streams", []) if info else []
         for stream in streams:
             self.add_stream(stream)
 
