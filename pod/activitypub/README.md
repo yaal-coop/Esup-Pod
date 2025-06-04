@@ -71,6 +71,8 @@ The state of the specification support in Peertube is similar to [Mastodon](http
 
 ## Configuration
 
+The ActivityPub feature is disabled by default, and can be enabled with using the ``USE_ACTIVITYPUB`` configuration parameter.
+
 A RSA keypair is needed for ActivityPub to work, and passed as
 `ACTIVITYPUB_PUBLIC_KEY` and `ACTIVITYPUB_PRIVATE_KEY` configuration settings.
 They can be generated from a python console:
@@ -98,7 +100,9 @@ The federation also needs celery to be configured with `ACTIVITYPUB_CELERY_BROKE
 Here is a sample working activitypub `pod/custom/settings_local.py`:
 
 ```python
-ACTIVITYPUB_CELERY_BROKER_URL = "redis://redis:6379/5"
+USE_ACTIVITYPUB = True
+
+ACTIVITYPUB_CELERY_BROKER_URL = "redis://redis.localhost:6379/5"
 
 with open("pod/activitypub/ap.key") as fd:
     ACTIVITYPUB_PRIVATE_KEY = fd.read()
