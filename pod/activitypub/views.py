@@ -42,6 +42,7 @@ logger = logging.getLogger(__name__)
 AP_PAGE_SIZE = 25
 
 
+TEST_SETTINGS = getattr(settings, "TEST_SETTINGS", False)
 TYPE_TASK = {
     "Follow": task_handle_inbox_follow,
     "Accept": task_handle_inbox_accept,
@@ -136,7 +137,7 @@ def inbox(request, username=None):
 
         if (
             data["type"] in ("Announce", "Update", "Delete")
-            and not settings.TEST_SETTINGS
+            and not TEST_SETTINGS
             and not check_signatures(request)
         ):
             logger.warning("ActivityPub inbox request signature is invalid.")
