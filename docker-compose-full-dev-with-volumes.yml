@@ -94,7 +94,7 @@ services:
   peertube:
     container_name: peertube
     hostname: peertube.localhost
-    image: chocobozzz/peertube:v7.1.0-bookworm
+    image: chocobozzz/peertube:v7.2.0-bookworm
     ports:
       - 9000:9000
       - 3000:3000
