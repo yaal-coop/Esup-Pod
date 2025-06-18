@@ -12,7 +12,9 @@ class VideoDiscoveryTest(ActivityPubTestCase):
         with open("pod/activitypub/tests/fixtures/peertube_video.json") as fd:
             payload = json.load(fd)
 
-        video = create_external_video(payload, source_instance=self.peertube_test_following)
+        video = create_external_video(
+            payload, source_instance=self.peertube_test_following
+        )
 
         assert (
             video.ap_id

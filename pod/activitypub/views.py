@@ -115,7 +115,9 @@ def account(request, username=None):
     """
     user = get_object_or_404(User, username=username) if username else None
 
-    context = AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT] if user else AP_DEFAULT_CONTEXT
+    context = (
+        AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT] if user else AP_DEFAULT_CONTEXT
+    )
     response = {
         "@context": context,
         **account_to_ap_actor(user),
@@ -151,7 +153,9 @@ def inbox(request, username=None):
         return HttpResponse(status=204)
 
     except (AttributeError, KeyError, UnicodeError, ValueError) as err:
-        logger.error("ActivityPub inbox request body badly formatted and unusable: %s" % err)
+        logger.error(
+            "ActivityPub inbox request body badly formatted and unusable: %s" % err
+        )
         return HttpResponse(status=422)
 
     except Exception as err:
@@ -315,7 +319,9 @@ def account_channel(request, username=None):
     """
     user = get_object_or_404(User, username=username) if username else None
 
-    context = AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT] if user else AP_DEFAULT_CONTEXT
+    context = (
+        AP_DEFAULT_CONTEXT + [AP_PT_CHANNEL_CONTEXT] if user else AP_DEFAULT_CONTEXT
+    )
     response = {
         "@context": context,
         **account_to_ap_group(user),

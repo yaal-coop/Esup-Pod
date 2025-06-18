@@ -311,7 +311,9 @@ def video_chapters(video):
     if not has_chapters:
         return {}
 
-    return {"hasParts": ap_url(reverse("activitypub:chapters", kwargs={"id": video.id}))}
+    return {
+        "hasParts": ap_url(reverse("activitypub:chapters", kwargs={"id": video.id}))
+    }
 
 
 def video_licences(video):

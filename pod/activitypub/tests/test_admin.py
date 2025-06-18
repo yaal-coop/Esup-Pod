@@ -37,19 +37,24 @@ class AdminActivityPubTestCase(ActivityPubTestCase):
         )
 
         self.peertube_test_following.refresh_from_db()
-        self.assertEqual(self.peertube_test_following.status, Following.Status.REQUESTED)
+        self.assertEqual(
+            self.peertube_test_following.status, Following.Status.REQUESTED
+        )
 
     def test_reindex_external_videos(self):
         """Nominal case test for the admin 'reindex_external_videos' action."""
 
-        with httmock.HTTMock(
-            self.mock_nodeinfo,
-            self.mock_application_actor,
-            self.mock_outbox,
-            self.mock_get_video,
-        ), patch(
-            "pod.activitypub.network.index_external_videos"
-        ) as index_external_videos:
+        with (
+            httmock.HTTMock(
+                self.mock_nodeinfo,
+                self.mock_application_actor,
+                self.mock_outbox,
+                self.mock_get_video,
+            ),
+            patch(
+                "pod.activitypub.network.index_external_videos"
+            ) as index_external_videos,
+        ):
             response = self.client.post(
                 "/admin/activitypub/following/",
                 {
@@ -72,12 +77,18 @@ class AdminActivityPubTestCase(ActivityPubTestCase):
 
         with open("pod/activitypub/tests/fixtures/peertube_video.json") as fd:
             payload = json.load(fd)
-        video = create_external_video(payload, source_instance=self.peertube_test_following)
+        video = create_external_video(
+            payload, source_instance=self.peertube_test_following
+        )
 
         with open("pod/activitypub/tests/fixtures/peertube_video_second.json") as fd:
             video_to_delete_payload = json.load(fd)
-        video_to_delete = create_external_video(video_to_delete_payload, source_instance=self.peertube_test_following)
-        self.assertEqual(video_to_delete, ExternalVideo.objects.get(id=video_to_delete.id))
+        video_to_delete = create_external_video(
+            video_to_delete_payload, source_instance=self.peertube_test_following
+        )
+        self.assertEqual(
+            video_to_delete, ExternalVideo.objects.get(id=video_to_delete.id)
+        )
 
         with httmock.HTTMock(
             self.mock_nodeinfo,
@@ -101,4 +112,8 @@ class AdminActivityPubTestCase(ActivityPubTestCase):
                 "The video indexations have started",
             )
             self.assertEqual(video.ap_id, ExternalVideo.objects.get(id=video.id).ap_id)
-            self.assertRaises(ExternalVideo.DoesNotExist, ExternalVideo.objects.get, id=video_to_delete.id)
+            self.assertRaises(
+                ExternalVideo.DoesNotExist,
+                ExternalVideo.objects.get,
+                id=video_to_delete.id,
+            )
