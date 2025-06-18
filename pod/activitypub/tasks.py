@@ -150,11 +150,11 @@ def task_broadcast_local_video_creation(video_id):
     from pod.video.models import Video
 
     from .models import Follower
-    from .network import send_video_announce_object
+    from .network import send_video_announce_objects
 
     video = Video.objects.get(id=video_id)
     for follower in Follower.objects.all():
-        send_video_announce_object(video, follower)
+        send_video_announce_objects(video, follower)
 
 
 @activitypub_app.task()

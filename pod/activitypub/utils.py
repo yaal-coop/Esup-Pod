@@ -29,7 +29,9 @@ URLComponents = namedtuple(
 )
 
 
-def make_url(scheme=None, netloc=None, params=None, path="", url="", fragment=""):
+def make_url(
+    scheme=None, netloc=None, params=None, path="", url="", fragment=""
+) -> str:
     """Format activitypub url."""
     if scheme is None:
         scheme = "https" if getattr(settings, "SECURE_SSL_REDIRECT") else "http"
@@ -54,8 +56,8 @@ def make_url(scheme=None, netloc=None, params=None, path="", url="", fragment=""
     )
 
 
-def ap_url(suffix=""):
-    """Returns a full URL to be used in activitypub context."""
+def ap_url(suffix="") -> str:
+    """Returns a full absolute URL to be used in activitypub context."""
     return make_url(url=suffix)
 
 

@@ -11,7 +11,8 @@ class VideoUpdateTest(ActivityPubTestCase):
     def test_video_creation(self):
         """Test video creation activities on the inbox.
 
-        When a Video is created on peertube, it sends two announces:
+        When a Video is created on peertube, it sends several announces:
+        - one for the video creation on the meta account;
         - one for the video creation on the user profile;
         - one for the video addition on the user channel.
 

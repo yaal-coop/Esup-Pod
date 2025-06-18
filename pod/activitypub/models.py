@@ -113,7 +113,7 @@ class ExternalVideo(BaseVideo):
 
     get_thumbnail_admin.fget.short_description = _("Thumbnails")
 
-    def get_thumbnail_url(self, scheme=False, is_activity_pub=False) -> str:
+    def get_thumbnail_url(self, is_activity_pub=False) -> str:
         """Get a thumbnail url for the video."""
         return self.thumbnail
 

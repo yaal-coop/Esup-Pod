@@ -258,16 +258,12 @@ def get_external_video_with_related_following(ap_video_id, plausible_following):
     return external_video
 
 
-def send_video_announce_object(video: Video, follower: Follower):
-    """Broadcast video announce."""
+def send_video_announce_object(video: Video, follower: Follower, owner_ap_url):
+    """Unicast a video announce."""
     actor_account = ap_object(follower.actor)
     inbox = actor_account["inbox"]
 
     video_ap_url = ap_url(reverse("activitypub:video", kwargs={"id": video.id}))
-    owner_ap_url = ap_url(
-        reverse("activitypub:account", kwargs={"username": video.owner.username})
-    )
-
     payload = {
         "@context": [
             "https://www.w3.org/ns/activitystreams",
@@ -293,8 +289,25 @@ def send_video_announce_object(video: Video, follower: Follower):
     return response.status_code == 204
 
 
+def send_video_announce_objects(video: Video, follower: Follower):
+    """Unicast an Announce object for a new video creation on behalf of the pod meta account, the owner account, the owner channel."""
+    meta_account_ap_url = ap_url(reverse("activitypub:account"))
+    owner_account_ap_url = ap_url(
+        reverse("activitypub:account", kwargs={"username": video.owner.username})
+    )
+    group_account_ap_url = ap_url(
+        reverse(
+            "activitypub:account_channel", kwargs={"username": video.owner.username}
+        )
+    )
+
+    send_video_announce_object(video, follower, meta_account_ap_url)
+    send_video_announce_object(video, follower, owner_account_ap_url)
+    send_video_announce_object(video, follower, group_account_ap_url)
+
+
 def send_video_update_object(video: Video, follower: Follower):
-    """Broadcast video update."""
+    """Unicast a video update announce."""
     actor_account = ap_object(follower.actor)
     inbox = actor_account["inbox"]
 
@@ -326,7 +339,7 @@ def send_video_update_object(video: Video, follower: Follower):
 
 
 def send_video_delete_object(video_id, owner_username, follower: Follower):
-    """Broadcast video delete."""
+    """Unicast a video delete object."""
     actor_account = ap_object(follower.actor)
     inbox = actor_account["inbox"]
 

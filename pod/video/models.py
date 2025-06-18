@@ -1053,7 +1053,7 @@ class Video(BaseVideo):
         """
         return 360 if self.is_video else 244
 
-    def get_thumbnail_url(self, size="x720", scheme=False, is_activity_pub=False) -> str:
+    def get_thumbnail_url(self, size="x720", is_activity_pub=False) -> str:
         """Get a thumbnail url for the video, with defined max size."""
         request = None
         # Initialize default thumbnail URL
@@ -1061,7 +1061,9 @@ class Video(BaseVideo):
             [
                 "//",
                 get_current_site(request).domain,
-                static(DEFAULT_THUMBNAIL),
+                static(
+                    DEFAULT_AP_THUMBNAIL if is_activity_pub else DEFAULT_THUMBNAIL
+                ),
             ]
         )
         if self.thumbnail and self.thumbnail.file_exist():
@@ -1076,20 +1078,6 @@ class Video(BaseVideo):
                     " for video %s: %s" % (self.id, e)
                 )
             return thumbnail_url
-        else:
-            thumbnail_url = "".join(
-                [
-                    "//",
-                    get_current_site(request).domain,
-                    static(
-                        DEFAULT_AP_THUMBNAIL if is_activity_pub else DEFAULT_THUMBNAIL
-                    ),
-                ]
-            )
-
-        if scheme:
-            scheme = "https" if getattr(settings, "SECURE_SSL_REDIRECT") else "http"
-            return f"{scheme}:{thumbnail_url}"
 
         return thumbnail_url
 

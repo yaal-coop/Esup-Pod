@@ -2,8 +2,9 @@ from django.template.defaultfilters import slugify
 from django.urls import reverse
 from markdownify import markdownify
 
+from urllib.parse import urlparse
 from pod.activitypub.constants import AP_LICENSE_MAPPING
-from pod.activitypub.utils import ap_url, make_magnet_url, stable_uuid
+from pod.activitypub.utils import make_url, ap_url, make_magnet_url, stable_uuid
 
 import logging
 
@@ -376,11 +377,13 @@ def video_icon(video):
     https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L192
     """
 
+    local_video_url = video.get_thumbnail_url(is_activity_pub=True)
+    parsed = urlparse(local_video_url)
     return {
         "icon": [
             {
                 "type": "Image",
-                "url": video.get_thumbnail_url(scheme=True, is_activity_pub=True),
+                "url": make_url(url=parsed.path),
                 "width": video.thumbnail.file.width if video.thumbnail else 640,
                 "height": video.thumbnail.file.height if video.thumbnail else 360,
                 # TODO: use the real media type when peertub supports JPEG
