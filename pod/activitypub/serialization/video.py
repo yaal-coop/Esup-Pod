@@ -377,7 +377,7 @@ def video_icon(video):
     https://github.com/Chocobozzz/PeerTube/blob/b824480af7054a5a49ddb1788c26c769c89ccc8a/server/core/helpers/custom-validators/activitypub/videos.ts#L192
     """
 
-    local_video_url = video.get_thumbnail_url(is_activity_pub=True)
+    local_video_url = video.get_thumbnail_url(default="img/default.png")
     parsed = urlparse(local_video_url)
     return {
         "icon": [

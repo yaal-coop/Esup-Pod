@@ -150,11 +150,11 @@ def task_broadcast_local_video_creation(video_id):
     from pod.video.models import Video
 
     from .models import Follower
-    from .network import send_video_announce_objects
+    from .network import send_video_creation_activities
 
     video = Video.objects.get(id=video_id)
     for follower in Follower.objects.all():
-        send_video_announce_objects(video, follower)
+        send_video_creation_activities(video, follower)
 
 
 @activitypub_app.task()
@@ -163,18 +163,18 @@ def task_broadcast_local_video_update(video_id):
     from pod.video.models import Video
 
     from .models import Follower
-    from .network import send_video_update_object
+    from .network import send_video_update_activity
 
     video = Video.objects.get(id=video_id)
     for follower in Follower.objects.all():
-        send_video_update_object(video, follower)
+        send_video_update_activity(video, follower)
 
 
 @activitypub_app.task()
 def task_broadcast_local_video_deletion(video_id, owner_username):
     """Send celery activitypub video delete request."""
     from .models import Follower
-    from .network import send_video_delete_object
+    from .network import send_video_delete_activity
 
     for follower in Follower.objects.all():
-        send_video_delete_object(video_id, owner_username, follower)
+        send_video_delete_activity(video_id, owner_username, follower)

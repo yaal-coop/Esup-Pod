@@ -48,7 +48,6 @@ from django.db.models import Count, Case, When, Value, BooleanField, Q
 from django.db.models.functions import Concat
 from os.path import splitext
 
-
 USE_PODFILE = getattr(settings, "USE_PODFILE", False)
 if USE_PODFILE:
     from pod.podfile.models import CustomImageModel
@@ -148,7 +147,6 @@ ENCODING_CHOICES = getattr(
     ),
 )
 DEFAULT_THUMBNAIL = getattr(settings, "DEFAULT_THUMBNAIL", "img/default.svg")
-DEFAULT_AP_THUMBNAIL = getattr(settings, "DEFAULT_AP_THUMBNAIL", "img/default.png")
 SECRET_KEY = getattr(settings, "SECRET_KEY", "")
 
 NOTES_STATUS = getattr(
@@ -1053,7 +1051,7 @@ class Video(BaseVideo):
         """
         return 360 if self.is_video else 244
 
-    def get_thumbnail_url(self, size="x720", is_activity_pub=False) -> str:
+    def get_thumbnail_url(self, size="x720", default=DEFAULT_THUMBNAIL) -> str:
         """Get a thumbnail url for the video, with defined max size."""
         request = None
         # Initialize default thumbnail URL
@@ -1061,9 +1059,7 @@ class Video(BaseVideo):
             [
                 "//",
                 get_current_site(request).domain,
-                static(
-                    DEFAULT_AP_THUMBNAIL if is_activity_pub else DEFAULT_THUMBNAIL
-                ),
+                static(default),
             ]
         )
         if self.thumbnail and self.thumbnail.file_exist():

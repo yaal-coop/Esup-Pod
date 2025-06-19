@@ -52,7 +52,7 @@ def get_instance_application_account_metadata(domain):
 
 
 def handle_incoming_follow(ap_follow):
-    """Process activitypub follow event."""
+    """Process activitypub follow activity."""
     actor_account = ap_object(ap_follow["actor"])
     inbox = actor_account["inbox"]
 
@@ -79,7 +79,7 @@ def handle_incoming_unfollow(ap_follow):
 
 
 def send_follow_request(following: Following):
-    """Send follow request to instance."""
+    """Send a follow request activity to another instance."""
     ap_actor = get_instance_application_account_metadata(following.object)
     following_url = ap_url(reverse("activitypub:following"))
     payload = {
@@ -122,7 +122,7 @@ def index_external_video(following: Following, video_url):
 
 
 def external_video_added_by_actor(ap_video, ap_actor):
-    """Process video creation from actor event."""
+    """Process video creation from actor activity."""
     logger.info(
         "ActivityPub task call ExternalVideo %s creation from actor %s",
         ap_video,
@@ -134,13 +134,14 @@ def external_video_added_by_actor(ap_video, ap_actor):
             ap_video_id=ap_video["id"], plausible_following=plausible_following
         )
         logger.warning(
-            "Received an ActivityPub create event from actor %s on an already existing ExternalVideo %s",
+            "Received an ActivityPub create activity from actor %s on an already existing ExternalVideo %s",
             ap_actor["id"],
             existing_e_video.id,
         )
     except Following.DoesNotExist:
         logger.warning(
-            "Received an ActivityPub create event from unknown actor %s", ap_actor["id"]
+            "Received an ActivityPub create activity from unknown actor %s",
+            ap_actor["id"],
         )
     except PermissionDenied:
         logger.warning(
@@ -154,7 +155,7 @@ def external_video_added_by_actor(ap_video, ap_actor):
 
 
 def external_video_added_by_channel(ap_video, ap_channel):
-    """Process video creation from channel event."""
+    """Process video creation activity from channel."""
     logger.info(
         "ActivityPub task call ExternalVideo %s creation from channel %s",
         ap_video,
@@ -166,13 +167,13 @@ def external_video_added_by_channel(ap_video, ap_channel):
             ap_video_id=ap_video["id"], plausible_following=plausible_following
         )
         logger.warning(
-            "Received an ActivityPub create event from channel %s on an already existing ExternalVideo %s",
+            "Received an ActivityPub create activity from channel %s on an already existing ExternalVideo %s",
             ap_channel["id"],
             existing_e_video.id,
         )
     except Following.DoesNotExist:
         logger.warning(
-            "Received an ActivityPub create event from unknown channel %s",
+            "Received an ActivityPub create activity from unknown channel %s",
             ap_channel["id"],
         )
     except PermissionDenied:
@@ -187,7 +188,7 @@ def external_video_added_by_channel(ap_video, ap_channel):
 
 
 def external_video_update(ap_video, ap_actor):
-    """Process video update event."""
+    """Process video update activity."""
     logger.info("ActivityPub task call ExternalVideo %s update", ap_video["id"])
     try:
         plausible_following = get_related_following(ap_actor=ap_actor)
@@ -202,7 +203,7 @@ def external_video_update(ap_video, ap_actor):
         index_es(media=external_video)
     except Following.DoesNotExist:
         logger.warning(
-            "Received an ActivityPub update event from unknown actor %s", ap_actor
+            "Received an ActivityPub update activity from unknown actor %s", ap_actor
         )
     except PermissionDenied:
         logger.warning(
@@ -210,13 +211,13 @@ def external_video_update(ap_video, ap_actor):
         )
     except ExternalVideo.DoesNotExist:
         logger.warning(
-            "Received an ActivityPub update event on a nonexistent ExternalVideo %s",
+            "Received an ActivityPub update activity on a nonexistent ExternalVideo %s",
             ap_video["id"],
         )
 
 
 def external_video_deletion(ap_video_id, ap_actor):
-    """Process video delete event."""
+    """Process video delete activity."""
     logger.info("ActivityPub task call ExternalVideo %s delete", ap_video_id)
     try:
         plausible_following = get_related_following(ap_actor=ap_actor)
@@ -227,7 +228,7 @@ def external_video_deletion(ap_video_id, ap_actor):
         external_video_to_delete.delete()
     except Following.DoesNotExist:
         logger.warning(
-            "Received an ActivityPub delete event from unknown actor %s", ap_actor
+            "Received an ActivityPub delete activity from unknown actor %s", ap_actor
         )
     except PermissionDenied:
         logger.warning(
@@ -235,7 +236,7 @@ def external_video_deletion(ap_video_id, ap_actor):
         )
     except ExternalVideo.DoesNotExist:
         logger.warning(
-            "Received an ActivityPub delete event on a nonexistent ExternalVideo %s from actor %s",
+            "Received an ActivityPub delete activity on a nonexistent ExternalVideo %s from actor %s",
             ap_video_id,
             plausible_following.object,
         )
@@ -258,8 +259,42 @@ def get_external_video_with_related_following(ap_video_id, plausible_following):
     return external_video
 
 
-def send_video_announce_object(video: Video, follower: Follower, owner_ap_url):
-    """Unicast a video announce."""
+def send_video_create_activity(video: Video, follower: Follower):
+    """Unicast a video Create activity."""
+    actor_account = ap_object(follower.actor)
+    inbox = actor_account["inbox"]
+
+    owner_ap_url = ap_url(
+        reverse("activitypub:account", kwargs={"username": video.owner.username})
+    )
+    video_ap_url = ap_url(reverse("activitypub:video", kwargs={"id": video.id}))
+    payload = {
+        "@context": [
+            "https://www.w3.org/ns/activitystreams",
+            "https://w3id.org/security/v1",
+            {"RsaSignature2017": "https://w3id.org/security#RsaSignature2017"},
+        ],
+        "to": [
+            "https://www.w3.org/ns/activitystreams#Public",
+            ap_url(reverse("activitypub:followers")),
+            ap_url(
+                reverse(
+                    "activitypub:followers", kwargs={"username": video.owner.username}
+                )
+            ),
+        ],
+        "cc": [],
+        "type": "Create",
+        "id": f"{video_ap_url}/create",
+        "actor": owner_ap_url,
+        "object": video_ap_url,
+    }
+    response = ap_post(inbox, payload)
+    return response.status_code == 204
+
+
+def send_video_announce_activity(video: Video, follower: Follower, owner_ap_url):
+    """Unicast a video Announce activity."""
     actor_account = ap_object(follower.actor)
     inbox = actor_account["inbox"]
 
@@ -289,24 +324,25 @@ def send_video_announce_object(video: Video, follower: Follower, owner_ap_url):
     return response.status_code == 204
 
 
-def send_video_announce_objects(video: Video, follower: Follower):
-    """Unicast an Announce object for a new video creation on behalf of the pod meta account, the owner account, the owner channel."""
+def send_video_creation_activities(video: Video, follower: Follower):
+    """Unicast several activities related to the video creation:
+    - A Create activity emitted by the video owner
+    - An Announce activity emitted from the pod meta account
+    - An Announce activity emitted from the video owner channel.
+    """
     meta_account_ap_url = ap_url(reverse("activitypub:account"))
-    owner_account_ap_url = ap_url(
-        reverse("activitypub:account", kwargs={"username": video.owner.username})
-    )
     group_account_ap_url = ap_url(
         reverse(
             "activitypub:account_channel", kwargs={"username": video.owner.username}
         )
     )
 
-    send_video_announce_object(video, follower, meta_account_ap_url)
-    send_video_announce_object(video, follower, owner_account_ap_url)
-    send_video_announce_object(video, follower, group_account_ap_url)
+    send_video_create_activity(video, follower)
+    send_video_announce_activity(video, follower, meta_account_ap_url)
+    send_video_announce_activity(video, follower, group_account_ap_url)
 
 
-def send_video_update_object(video: Video, follower: Follower):
+def send_video_update_activity(video: Video, follower: Follower):
     """Unicast a video update announce."""
     actor_account = ap_object(follower.actor)
     inbox = actor_account["inbox"]
@@ -338,7 +374,7 @@ def send_video_update_object(video: Video, follower: Follower):
     return response.status_code == 204
 
 
-def send_video_delete_object(video_id, owner_username, follower: Follower):
+def send_video_delete_activity(video_id, owner_username, follower: Follower):
     """Unicast a video delete object."""
     actor_account = ap_object(follower.actor)
     inbox = actor_account["inbox"]
