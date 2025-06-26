@@ -92,6 +92,7 @@ export
 COMPOSE = docker compose -f ./docker-compose-dev-with-volumes.yml -p esup-pod
 COMPOSE_FULL = docker compose -f ./docker-compose-full-dev-with-volumes.yml -p esup-pod
 COMPOSE_FULL_TEST = docker compose -f ./docker-compose-full-dev-with-volumes-test.yml -p esup-pod
+COMPOSE_POD_PEERTUBE= docker compose --file docker-compose-pod-peertube.yml --project-name esup-pod
 DOCKER_LOGS = docker logs -f
 
 #docker-start-build:
@@ -127,6 +128,9 @@ ifeq ($(DOCKER_ENV), full)
 else ifeq ($(DOCKER_ENV), full-test)
 	@$(COMPOSE_FULL_TEST) build --build-arg ELASTICSEARCH_VERSION=$(ELASTICSEARCH_TAG) --build-arg NODE_VERSION=$(NODE_TAG) --build-arg PYTHON_VERSION=$(PYTHON_TAG) --no-cache
 	@$(COMPOSE_FULL_TEST) up
+else ifeq ($(DOCKER_ENV), pod-peertube)
+	@$(COMPOSE_POD_PEERTUBE) build --build-arg ELASTICSEARCH_VERSION=$(ELASTICSEARCH_TAG) --build-arg NODE_VERSION=$(NODE_TAG) --build-arg PYTHON_VERSION=$(PYTHON_TAG) --no-cache
+	@$(COMPOSE_POD_PEERTUBE) up
 else
 	@$(COMPOSE) build --build-arg ELASTICSEARCH_VERSION=$(ELASTICSEARCH_TAG) --build-arg NODE_VERSION=$(NODE_TAG) --build-arg PYTHON_VERSION=$(PYTHON_TAG) --no-cache
 	@$(COMPOSE) up
@@ -141,6 +145,8 @@ ifeq ($(DOCKER_ENV), full)
 	@$(COMPOSE_FULL) up
 else ifeq ($(DOCKER_ENV), full-test)
 	@$(COMPOSE_FULL_TEST) up
+else ifeq ($(DOCKER_ENV), pod-peertube)
+	@$(COMPOSE_POD_PEERTUBE) up
 else
 	@$(COMPOSE) up
 endif
@@ -153,6 +159,8 @@ ifeq ($(DOCKER_ENV), full)
 	@$(COMPOSE_FULL) down -v
 else ifeq ($(DOCKER_ENV), full-test)
 	@$(COMPOSE_FULL_TEST)  down -v
+else ifeq ($(DOCKER_ENV), pod-peertube)
+	@$(COMPOSE_POD_PEERTUBE) down --volumes
 else
 	@$(COMPOSE) down -v
 endif
@@ -163,6 +171,8 @@ ifeq ($(DOCKER_ENV), full)
 	@$(COMPOSE_FULL) down -v
 else ifeq ($(DOCKER_ENV), full-test)
 	@$(COMPOSE_FULL_TEST)  down -v
+else ifeq ($(DOCKER_ENV), pod-peertube)
+	@$(COMPOSE_FULL_TEST) down --volumes
 else
 	@$(COMPOSE) down -v
 endif

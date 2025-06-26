@@ -1,0 +1,98 @@
+x-pod-volumes: &pod-volumes
+  - .:/usr/src/app
+
+x-elasticsearch-volumes: &elasticsearch-volumes
+  - ./dockerfile-dev-with-volumes/config/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+
+services:
+  pod:
+    container_name: pod
+    hostname: pod.localhost
+    build:
+      context: .
+      dockerfile: dockerfile-dev-with-volumes/pod/Dockerfile
+    depends_on:
+      elasticsearch:
+        condition: service_started
+      redis:
+        condition: service_started
+    env_file:
+      - ./.env.dev
+    ports:
+      - 8000:8000
+    volumes: *pod-volumes
+
+  elasticsearch:
+    container_name: elasticsearch
+    hostname: elasticsearch.localhost
+    build:
+      context: .
+      dockerfile: dockerfile-dev-with-volumes/elasticsearch/dockerfile-elasticsearch-dev
+    ports:
+      - 9200:9200
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+    volumes: *elasticsearch-volumes
+
+  pod-activitypub-worker:
+    container_name: pod-activitypub-worker
+    build:
+      context: .
+      dockerfile: dockerfile-dev-with-volumes/pod-activitypub/Dockerfile
+    depends_on:
+      pod:
+        condition: service_started
+      redis:
+        condition: service_started
+    env_file:
+      - ./.env.dev
+    volumes: *pod-volumes
+
+  peertube:
+    container_name: peertube
+    hostname: peertube.localhost
+    image: chocobozzz/peertube:v7.2.0-bookworm
+    ports:
+      - 9000:9000
+      - 3000:3000
+    env_file:
+      - ./dockerfile-dev-with-volumes/peertube/peertube.env
+      - ./.env.dev
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      postfix:
+        condition: service_started
+    volumes:
+      - ./dockerfile-dev-with-volumes/peertube/dev.yaml:/app/config/dev.yaml
+    command: sh -c "yarn install && npm run dev"
+    restart: "always"
+
+  redis:
+    container_name: redis
+    hostname: redis.localhost
+    image: ${REDIS_TAG}
+    env_file:
+      - ./.env.dev
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
+
+  postgres:
+    image: postgres:13-alpine
+    env_file:
+      - ./dockerfile-dev-with-volumes/peertube/peertube.env
+      - ./.env.dev
+    restart: "always"
+
+  postfix:
+    image: mwader/postfix-relay
+    env_file:
+      - ./dockerfile-dev-with-volumes/peertube/peertube.env
+      - ./.env.dev
+    restart: "always"
