@@ -138,11 +138,13 @@ def inbox(request, username=None):
         logger.warning("inbox query: %s", json.dumps(data, indent=True))
 
         if (
-            data["type"] in ("Announce", "Update", "Delete")
+            data["type"] in ("Create", "Announce", "Update", "Delete")
             and not TEST_SETTINGS
             and not check_signatures(request)
         ):
-            logger.warning("ActivityPub inbox request signature is invalid.")
+            logger.warning(
+                f"ActivityPub inbox request signature is invalid for activity {data['type']}."
+            )
             return HttpResponse("Signature could not be verified", status=403)
 
         if activitypub_task := TYPE_TASK.get(data["type"], None):
