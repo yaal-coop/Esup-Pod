@@ -25,7 +25,7 @@ COPY ./requirements-encode.txt .
 COPY ./requirements-dev.txt .
 
 RUN pip3 install --no-cache-dir -r requirements-dev.txt \
-    && pip3 install elasticsearch==7.17.9
+    && pip3 install elasticsearch==8.9.0
 
 COPY ./dockerfile-dev-with-volumes/pod-activitypub/my-entrypoint-activitypub.sh /tmp/my-entrypoint-activitypub.sh
 RUN chmod 755 /tmp/my-entrypoint-activitypub.sh
