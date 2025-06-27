@@ -1,0 +1,120 @@
+x-pod-volumes: &pod-volumes
+  - .:/usr/src/app
+
+x-elasticsearch-volumes: &elasticsearch-volumes
+  - ./dockerfile-dev-with-volumes/config/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+
+services:
+  pod-a:
+    container_name: pod-a
+    hostname: pod-a.localhost
+    build:
+      context: .
+      dockerfile: dockerfile-dev-with-volumes/pod/Dockerfile
+    depends_on:
+      elasticsearch:
+        condition: service_started
+      redis:
+        condition: service_started
+    env_file:
+      - ./.env.dev
+    ports:
+      - 8000:8000
+    environment:
+      DJANGO_SETTINGS_MODULE: "dockerfile_dev_with_volumes.ap_pod_a_settings"
+      INITIAL_DATA_FILE: "initial_data_ap_pod_a.json"
+    volumes: *pod-volumes
+
+  pod-b:
+    container_name: pod-b
+    hostname: pod-b.localhost
+    build:
+      context: .
+      dockerfile: dockerfile-dev-with-volumes/pod/Dockerfile
+    depends_on:
+      elasticsearch:
+        condition: service_started
+      redis:
+        condition: service_started
+    env_file:
+      - ./.env.dev
+    ports:
+      - 9000:8000
+    environment:
+      DJANGO_SETTINGS_MODULE: "dockerfile_dev_with_volumes.ap_pod_b_settings"
+      INITIAL_DATA_FILE: "initial_data_ap_pod_b.json"
+    volumes: *pod-volumes
+
+  elasticsearch:
+    container_name: elasticsearch
+    hostname: elasticsearch.localhost
+    build:
+      context: .
+      dockerfile: dockerfile-dev-with-volumes/elasticsearch/dockerfile-elasticsearch-dev
+    ports:
+      - 9200:9200
+    environment:
+      # Configuration pour un nœud unique (pas de cluster)
+      - discovery.type=single-node
+
+      # Désactiver la sécurité
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+
+      # Limiter l'utilisation mémoire au minimum
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+      # Optimisations pour réduire l'usage CPU et mémoire
+      - bootstrap.memory_lock=false
+      - cluster.routing.allocation.disk.threshold_enabled=false
+
+      # Désactiver les fonctionnalités non essentielles
+      - xpack.ml.enabled=false
+      - action.auto_create_index=true
+
+      # Optimisations de performance pour démarrage rapide
+      - indices.memory.index_buffer_size=10%
+      - thread_pool.write.queue_size=1000
+      - cluster.max_shards_per_node=1000
+    volumes: *elasticsearch-volumes
+
+  pod-activitypub-worker-a:
+    container_name: pod-activitypub-worker-a
+    build:
+      context: .
+      dockerfile: dockerfile-dev-with-volumes/pod-activitypub/Dockerfile
+    depends_on:
+      pod-a:
+        condition: service_started
+      redis:
+        condition: service_started
+    env_file:
+      - ./.env.dev
+    volumes: *pod-volumes
+
+  pod-activitypub-worker-b:
+    container_name: pod-activitypub-worker-b
+    build:
+      context: .
+      dockerfile: dockerfile-dev-with-volumes/pod-activitypub/Dockerfile
+    depends_on:
+      pod-b:
+        condition: service_started
+      redis:
+        condition: service_started
+    env_file:
+      - ./.env.dev
+    volumes: *pod-volumes
+
+  redis:
+    container_name: redis
+    hostname: redis.localhost
+    image: ${REDIS_TAG}
+    env_file:
+      - ./.env.dev
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]

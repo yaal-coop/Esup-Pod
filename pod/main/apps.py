@@ -1,5 +1,7 @@
 """Esup-pod Main applications."""
 
+import os
+
 from django.apps import AppConfig
 from django.db.models.signals import post_migrate
 from django.utils.translation import gettext_lazy as _
@@ -72,7 +74,8 @@ def create_missing_conf(sender, **kwargs) -> None:
 
     print("---> Creating missing configurations...")
     json_data = []
-    with open("./pod/main/fixtures/initial_data.json", encoding="utf-8") as data_file:
+    initial_data_file = os.getenv("INITIAL_DATA_FILE", "initial_data.json")
+    with open(f"./pod/main/fixtures/{initial_data_file}", encoding="utf-8") as data_file:
         json_data = json.loads(data_file.read())
 
     updated_count = 0
