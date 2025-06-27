@@ -31,9 +31,30 @@ services:
     ports:
       - 9200:9200
     environment:
+      # Configuration pour un nœud unique (pas de cluster)
       - discovery.type=single-node
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+
+      # Désactiver la sécurité
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+
+      # Limiter l'utilisation mémoire au minimum
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+
+      # Optimisations pour réduire l'usage CPU et mémoire
+      - bootstrap.memory_lock=false
+      - cluster.routing.allocation.disk.threshold_enabled=false
+
+      # Désactiver les fonctionnalités non essentielles
+      - xpack.ml.enabled=false
+      - action.auto_create_index=true
+
+      # Optimisations de performance pour démarrage rapide
+      - indices.memory.index_buffer_size=10%
+      - thread_pool.write.queue_size=1000
+      - cluster.max_shards_per_node=1000
     volumes: *elasticsearch-volumes
 
   pod-activitypub-worker:

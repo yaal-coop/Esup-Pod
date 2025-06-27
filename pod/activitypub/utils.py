@@ -158,7 +158,8 @@ def check_signatures(request):
         )
 
     # abort if any header is missing
-    except (KeyError, ValueError):
+    except (KeyError, ValueError) as exc:
+        logger.debug("Missing signature header")
         return False
 
     return valid_payload and valid_headers

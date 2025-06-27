@@ -12,6 +12,11 @@ FROM $PYTHON_VERSION
 WORKDIR /tmp/pod
 COPY ./pod/ .
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        netcat \
+    && apt-get clean
+
 WORKDIR /usr/src/app
 
 COPY ./requirements.txt .
