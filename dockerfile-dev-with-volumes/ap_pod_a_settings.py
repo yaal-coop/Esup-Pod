@@ -1,6 +1,8 @@
 import os
 from Crypto.PublicKey import RSA
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 USE_PODFILE = True
 EMAIL_ON_ENCODING_COMPLETION = False
 SECRET_KEY = "A_CHANGER"
@@ -42,20 +44,26 @@ ACTIVITYPUB_CELERY_BROKER_URL = "redis://redis.localhost:6379/5"
 USE_ACTIVITYPUB = True
 
 # Dynamically create AP public keys if needed
-if not os.path.exists("pod/activitypub/ap.key"):
+if not os.path.exists("pod/activitypub/ap-pod-a.key"):
     activitypub_key = RSA.generate(2048)
-    with open("pod/activitypub/ap.key", "w") as fd:
+    with open("pod/activitypub/ap-pod-a.key", "w") as fd:
         fd.write(activitypub_key.export_key().decode())
 
-    with open("pod/activitypub/ap.pub", "w") as fd:
+    with open("pod/activitypub/ap-pod-a.pub", "w") as fd:
         fd.write(activitypub_key.publickey().export_key().decode())
 
 
-with open("pod/activitypub/ap.key") as fd:
+with open("pod/activitypub/ap-pod-a.key") as fd:
     ACTIVITYPUB_PRIVATE_KEY = fd.read()
 
-with open("pod/activitypub/ap.pub") as fd:
+with open("pod/activitypub/ap-pod-a.pub") as fd:
     ACTIVITYPUB_PUBLIC_KEY = fd.read()
 
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": os.path.join(BASE_DIR, "db-pod-a.sqlite3"),
+    }
+}
 
 from pod.settings import *

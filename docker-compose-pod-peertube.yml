@@ -31,6 +31,8 @@ services:
     ports:
       - 9200:9200
     environment:
+      - logger.level=WARN
+
       # Configuration pour un nœud unique (pas de cluster)
       - discovery.type=single-node
 

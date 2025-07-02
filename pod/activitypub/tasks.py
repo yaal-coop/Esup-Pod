@@ -23,6 +23,7 @@ activitypub_app = Celery("activitypub", broker=ACTIVITYPUB_CELERY_BROKER_URL)
 activitypub_app.conf.task_routes = {"pod.activitypub.tasks.*": {"queue": "activitypub"}}
 activitypub_app.conf.task_always_eager = CELERY_TASK_ALWAYS_EAGER
 activitypub_app.conf.task_eager_propagates = CELERY_TASK_ALWAYS_EAGER
+activitypub_app.conf.broker_connection_retry_on_startup = True
 
 logger = get_task_logger(__name__)
 
