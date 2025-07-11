@@ -5,9 +5,9 @@ mkdir -p pod/db_migrations && touch pod/db_migrations/__init__.py
 ln -fs /tmp/node_modules/* pod/node_modules
 # Mise en route
 # Base de données SQLite intégrée
-BDD_FILE=/usr/src/app/pod/db.sqlite3
-if test ! -f "$BDD_FILE"; then
-    echo "$BDD_FILE does not exist."
+INIT_FILE=/usr/src/app/pod/.initialized
+if test ! -f "$INIT_FILE"; then
+    echo "$INIT_FILE does not exist."
     python3 manage.py create_pod_index
     curl -XGET "elasticsearch:9200/pod/_search"
     # Deployez les fichiers statiques
@@ -17,8 +17,9 @@ if test ! -f "$BDD_FILE"; then
     # SuperUtilisateur
     # Il faut créer un premier utilisateur qui aura tous les pouvoirs sur votre instance.
     python3 manage.py createsuperuser --noinput
+    touch "$INIT_FILE"
 else
-    echo "$BDD_FILE exist."
+    echo "$INIT_FILE exist."
 fi
 # Serveur de développement
 # Le serveur de développement permet de tester vos futures modifications facilement.

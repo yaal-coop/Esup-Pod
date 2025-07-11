@@ -51,6 +51,7 @@ pod/main/static/custom/img
 settings_local.py
 transcription/*
 docker-volume
+.initialized
 
 # Unit test utilities #
 #######################
