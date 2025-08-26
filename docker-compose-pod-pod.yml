@@ -1,3 +1,9 @@
+x-pod-volumes: &pod-volumes
+  - .:/usr/src/app
+
+x-elasticsearch-volumes: &elasticsearch-volumes
+  - ./dockerfile-dev-with-volumes/config/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+
 services:
   pod-a:
     container_name: pod-a
@@ -16,6 +22,7 @@ services:
       - 8000:8000
     environment:
       INITIAL_DATA_FILE: "initial_data_ap_pod_a.json"
+    volumes: *pod-volumes
 
   pod-b:
     container_name: pod-b
@@ -34,6 +41,7 @@ services:
       - 9000:8000
     environment:
       INITIAL_DATA_FILE: "initial_data_ap_pod_b.json"
+    volumes: *pod-volumes
 
   elasticsearch:
     container_name: elasticsearch
@@ -70,6 +78,7 @@ services:
       - indices.memory.index_buffer_size=10%
       - thread_pool.write.queue_size=1000
       - cluster.max_shards_per_node=1000
+    volumes: *elasticsearch-volumes
 
   pod-activitypub-worker-a:
     container_name: pod-activitypub-worker-a
@@ -83,6 +92,7 @@ services:
         condition: service_started
     env_file:
       - ./.env.dev
+    volumes: *pod-volumes
 
   pod-activitypub-worker-b:
     container_name: pod-activitypub-worker-b
@@ -96,6 +106,7 @@ services:
         condition: service_started
     env_file:
       - ./.env.dev
+    volumes: *pod-volumes
 
   redis:
     container_name: redis
