@@ -5,7 +5,7 @@ mkdir -p pod/db_migrations && touch pod/db_migrations/__init__.py
 ln -fs /tmp/node_modules/* pod/node_modules
 # Mise en route
 # Base de données SQLite intégrée
-INIT_FILE=/usr/src/app/pod/.initialized
+INIT_FILE="/usr/src/app/pod/.${HOSTNAME}.initialized"
 if test ! -f "$INIT_FILE"; then
     echo "$INIT_FILE does not exist."
     python3 manage.py create_pod_index
