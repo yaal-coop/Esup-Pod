@@ -78,7 +78,7 @@ pystyle:
 statics:
 	cd pod; yarn install; yarn upgrade
 	# --clear Clear the existing files before trying to copy or link the original file.
-	python3 manage.py collectstatic --clear
+	python3 manage.py collectstatic --clear --verbosity 0
 
 # Generate configuration docs in .MD format
 createconfigs:
@@ -190,7 +190,7 @@ endif
 	sudo rm -rf ./pod/node_modules
 	sudo rm -rf ./pod/db_migrations
 	sudo rm -rf ./pod/*.sqlite3
-	sudo rm -rf ./pod/.initialized
+	sudo rm -rf ./pod/.*initialized
 	sudo rm -rf ./pod/media
 
 # Ouvre un shell avec le contexte Django dans le conteneur pod
