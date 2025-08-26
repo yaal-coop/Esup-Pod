@@ -61,6 +61,8 @@ DOCKER_ENV=light
 Renseignez le fichier pod/custom/settings_local.py comme ceci :
 [source,python]
 ----
+import os
+instance = os.getenv("POD_INSTANCE", "pod")
 
 USE_PODFILE = True
 EMAIL_ON_ENCODING_COMPLETION = False
@@ -69,6 +71,7 @@ DEBUG = True
 # on précise ici qu'on utilise ES version 8
 ES_VERSION = 8
 ES_URL = ['http://elasticsearch.localhost:9200/']
+ES_INDEX = instance
 
 
 CACHES = {
@@ -78,7 +81,7 @@ CACHES = {
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
-        "KEY_PREFIX": "pod"
+        "KEY_PREFIX": instance
     },
     "select2": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -93,7 +96,7 @@ SESSION_REDIS = {
     "host": "redis.localhost",
     "port": 6379,
     "db": 4,
-    "prefix": "session",
+    "prefix": f"session-{instance}",
     "socket_timeout": 1,
     "retry_on_timeout": False,
 }
