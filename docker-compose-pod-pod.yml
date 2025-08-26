@@ -13,9 +13,9 @@ services:
       dockerfile: dockerfile-dev-with-volumes/pod/Dockerfile
     depends_on:
       elasticsearch:
-        condition: service_started
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - ./.env.dev
     ports:
@@ -32,9 +32,9 @@ services:
       dockerfile: dockerfile-dev-with-volumes/pod/Dockerfile
     depends_on:
       elasticsearch:
-        condition: service_started
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - ./.env.dev
     ports:
@@ -89,7 +89,7 @@ services:
       pod-a:
         condition: service_started
       redis:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - ./.env.dev
     volumes: *pod-volumes
@@ -103,7 +103,7 @@ services:
       pod-b:
         condition: service_started
       redis:
-        condition: service_started
+        condition: service_healthy
     env_file:
       - ./.env.dev
     volumes: *pod-volumes
