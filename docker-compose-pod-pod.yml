@@ -21,7 +21,7 @@ services:
     ports:
       - 8000:8000
     environment:
-      POD_INSTANCE=pod-a
+      - POD_INSTANCE=pod-a
     volumes: *pod-volumes
 
   pod-b:
@@ -40,7 +40,7 @@ services:
     ports:
       - 9000:8000
     environment:
-      POD_INSTANCE=pod-b
+      - POD_INSTANCE=pod-b
     volumes: *pod-volumes
 
   elasticsearch:
@@ -93,7 +93,7 @@ services:
     env_file:
       - ./.env.dev
     environment:
-      POD_INSTANCE=pod-a
+      - POD_INSTANCE=pod-a
     volumes: *pod-volumes
 
   pod-activitypub-worker-b:
@@ -108,7 +108,8 @@ services:
         condition: service_healthy
     env_file:
       - ./.env.dev
-      POD_INSTANCE=pod-b
+    environment:
+      - POD_INSTANCE=pod-b
     volumes: *pod-volumes
 
   redis:
