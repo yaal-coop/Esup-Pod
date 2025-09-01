@@ -5,7 +5,6 @@ Django version: 3.2.
 """
 
 import os
-import socket
 
 ##
 # flatpages
@@ -81,11 +80,11 @@ MANAGERS = []
 # to be used with Django.
 #
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
-hostname = socket.gethostname()
+default_db = "db.{instance}.sqlite3".format(instance=os.environ["POD_INSTANCE"]) if os.getenv("POD_INSTANCE") else "db.sqlite3"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, f"db.{hostname}.sqlite3"),
+        "NAME": os.path.join(BASE_DIR, default_db),
     }
 }
 
