@@ -17,7 +17,7 @@ PORT = os.getenv("POD_PORT", 8000)
 def init_site(sender, **kwargs):
     from django.contrib.sites.models import Site
 
-    domain = f"http://{INSTANCE}.localhost:{PORT}"
+    domain = f"{INSTANCE}.localhost:{PORT}"
     Site.objects.update_or_create(
         id=settings.SITE_ID,
         defaults={
