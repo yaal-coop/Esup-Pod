@@ -14,6 +14,7 @@ SITE_ID = getattr(settings, "SITE_ID", 1)
 INSTANCE = os.getenv("POD_INSTANCE", "pod")
 PORT = os.getenv("POD_PORT", 8000)
 
+
 def init_site(sender, **kwargs):
     from django.contrib.sites.models import Site
 

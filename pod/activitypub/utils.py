@@ -158,7 +158,7 @@ def check_signatures(request):
         )
 
     # abort if any header is missing
-    except (KeyError, ValueError) as exc:
+    except (KeyError, ValueError):
         logger.debug("Missing signature header")
         return False
 
