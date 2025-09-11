@@ -18,12 +18,15 @@ ACTIVITYPUB_CELERY_BROKER_URL = getattr(
     settings_local, "ACTIVITYPUB_CELERY_BROKER_URL", ""
 )
 CELERY_TASK_ALWAYS_EAGER = getattr(settings, "CELERY_TASK_ALWAYS_EAGER", False)
+INSTANCE = getattr(settings_local, "INSTANCE", None)
 
 activitypub_app = Celery("activitypub", broker=ACTIVITYPUB_CELERY_BROKER_URL)
 activitypub_app.conf.task_routes = {"pod.activitypub.tasks.*": {"queue": "activitypub"}}
 activitypub_app.conf.task_always_eager = CELERY_TASK_ALWAYS_EAGER
 activitypub_app.conf.task_eager_propagates = CELERY_TASK_ALWAYS_EAGER
 activitypub_app.conf.broker_connection_retry_on_startup = True
+if INSTANCE:
+    activitypub_app.conf.broker_transport_options = {"global_keyprefix": INSTANCE}
 
 logger = get_task_logger(__name__)
 
