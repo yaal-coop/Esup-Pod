@@ -5,6 +5,7 @@ Django version: 3.2.
 """
 
 import os
+INSTANCE = os.getenv("POD_INSTANCE", None)
 
 ##
 # flatpages
@@ -80,7 +81,7 @@ MANAGERS = []
 # to be used with Django.
 #
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
-default_db = "db.{instance}.sqlite3".format(instance=os.environ["POD_INSTANCE"]) if os.getenv("POD_INSTANCE") else "db.sqlite3"
+default_db = f"db.{INSTANCE}.sqlite3" if INSTANCE else "db.sqlite3"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
