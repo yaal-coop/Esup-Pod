@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 def format_ap_video_data(payload, source_instance):
     """Create an ExternalVideo object from an AP Video payload."""
-
     video_source_links = [
         {
             "type": link["mediaType"],
@@ -39,14 +38,17 @@ def format_ap_video_data(payload, source_instance):
             if "mediaType" in link and link["mediaType"] == "video/mp4"
         ]
 
+    # For peertube payloads, guess the thumbnail by looking for 'thumbnail' in the url
+    thumbnails = [
+        icon for icon in payload["icon"] if "thumbnails" in icon["url"]
+    ] + payload["icon"]
+    thumbnail_url = thumbnails[0]["url"] if thumbnails else None
     external_video_attributes = {
         "ap_id": payload["id"],
         "videos": video_source_links,
         "title": payload["name"],
         "date_added": isoparse(payload["published"]),
-        "thumbnail": [icon for icon in payload["icon"] if "thumbnails" in icon["url"]][
-            0
-        ]["url"],
+        "thumbnail": thumbnail_url,
         "duration": int(payload["duration"].lstrip("PT").rstrip("S")),
         "viewcount": payload["views"],
         "source_instance": source_instance,
