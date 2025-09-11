@@ -1,15 +1,16 @@
 #!/bin/sh
-echo "Launching commands into pod-dev"
+INSTANCE="${POD_INSTANCE:-pod}"
+echo "Launching commands into ${INSTANCE}-dev"
 mkdir -p pod/node_modules
 mkdir -p pod/db_migrations && touch pod/db_migrations/__init__.py
 ln -fs /tmp/node_modules/* pod/node_modules
 # Mise en route
 # Base de données SQLite intégrée
-INIT_FILE="/usr/src/app/pod/.${HOSTNAME}.initialized"
+INIT_FILE="/usr/src/app/pod/.${INSTANCE}.initialized"
 if test ! -f "$INIT_FILE"; then
     echo "$INIT_FILE does not exist."
     python3 manage.py create_pod_index
-    curl -XGET "elasticsearch.localhost:9200/${HOSTNAME}/_search"
+    curl -XGET "elasticsearch.localhost:9200/${INSTANCE}/_search"
     # Deployez les fichiers statiques
     python3 manage.py collectstatic --no-input --clear --verbosity 0
     # Lancez le script présent à la racine afin de créer les fichiers de migration, puis de les lancer pour créer la base de données SQLite intégrée.
