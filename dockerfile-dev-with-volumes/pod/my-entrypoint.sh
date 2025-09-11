@@ -9,7 +9,7 @@ INIT_FILE="/usr/src/app/pod/.${HOSTNAME}.initialized"
 if test ! -f "$INIT_FILE"; then
     echo "$INIT_FILE does not exist."
     python3 manage.py create_pod_index
-    curl -XGET "elasticsearch.localhost:9200/pod/_search"
+    curl -XGET "elasticsearch.localhost:9200/${HOSTNAME}/_search"
     # Deployez les fichiers statiques
     python3 manage.py collectstatic --no-input --clear --verbosity 0
     # Lancez le script présent à la racine afin de créer les fichiers de migration, puis de les lancer pour créer la base de données SQLite intégrée.
