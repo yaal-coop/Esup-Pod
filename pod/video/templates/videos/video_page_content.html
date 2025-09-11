@@ -93,30 +93,29 @@
         {% trans 'The video is currently waiting for Aristote AI treatment.' %}
       </div>
     {% endif %}
-  {% endif %}
-  {% if not video.video %}
-    <div class="alert alert-warning" role="alert">
-      <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-      {% trans 'The form does not contain a video.' %}
-    </div>
-  {% elif video.get_encoding_step == "" %}
-    <div class="alert alert-warning" role="alert">
-      <i class="bi bi-hourglass-split" aria-hidden="true"></i>
-      {% trans 'The video is currently waiting for encoding.' %}
-    </div>
-  {% endif %}
-  {% if video.encoding_in_progress %}
-    <div class="alert alert-warning" role="alert">
-      <i class="bi bi-cpu" aria-hidden="true"></i>
-      {% trans 'The video is currently being encoded.' %}
-    </div>
-  {% endif %}
-
-  {% if video.get_encoding_step == "5 : transcripting audio" %}
-    <p class="text-info-emphasis">
-      <i class="bi bi-cpu" aria-hidden="true"></i>
-      {% trans 'The video is currently being transcripted.' %}
-    </p>
+    {% if not video.video %}
+      <div class="alert alert-warning" role="alert">
+        <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+        {% trans 'The form does not contain a video.' %}
+      </div>
+    {% elif video.get_encoding_step == "" %}
+      <div class="alert alert-warning" role="alert">
+        <i class="bi bi-hourglass-split" aria-hidden="true"></i>
+        {% trans 'The video is currently waiting for encoding.' %}
+      </div>
+    {% endif %}
+    {% if video.encoding_in_progress %}
+      <div class="alert alert-warning" role="alert">
+        <i class="bi bi-cpu" aria-hidden="true"></i>
+        {% trans 'The video is currently being encoded.' %}
+      </div>
+    {% endif %}
+    {% if video.get_encoding_step == "5 : transcripting audio" %}
+      <p class="text-info-emphasis">
+        <i class="bi bi-cpu" aria-hidden="true"></i>
+        {% trans 'The video is currently being transcripted.' %}
+      </p>
+    {% endif %}
   {% endif %}
   {% block video-element %}
     {% if form %}

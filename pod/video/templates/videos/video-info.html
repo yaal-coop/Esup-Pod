@@ -108,6 +108,7 @@
   <div id="info" class="pod-info-video__info">
     <h2 class="tab-title visually-hidden"><i class=" bi bi-info-circle"></i>&nbsp;{% trans 'Infos' %}</h2>
     <ul class="list-inline d-flex flex-wrap">
+      {% if video.owner %}
       <li class="col-6 col-md-4">
         <span class="pod-meta-title">{% trans 'Added by:' %}</span>
         {% if owner_filter %}
@@ -123,6 +124,7 @@
           </a>
         {% endif %}
       </li>
+      {% endif %}
       {% if video.additional_owners.all %}
       <li class="col-6 col-md-4">
         <span class="pod-meta-title pod-meta-title-additional-owners">{% trans 'Additional owner(s):' %}</span>
@@ -212,6 +214,7 @@
         </li>
       {% endif %}
 
+      {% if video.type %}
       <li class="col-6 col-md-4">
         <span class="pod-meta-title">{% trans 'Type:' %}</span>
         <a href="{% url 'videos:videos' %}?type={{ video.type.slug }}"
@@ -221,11 +224,14 @@
           {{ video.type.title }}
         </a>
       </li>
+      {% endif %}
 
+      {% if video.get_main_lang %}
       <li class="col-6 col-md-4">
         <span class="pod-meta-title">{% trans 'Main language:' %}</span>
         {{video.get_main_lang}}
       </li>
+      {% endif %}
 
       {% if video.cursus and video.cursus != '0' %}
         <li class="col-6 col-md-4">
