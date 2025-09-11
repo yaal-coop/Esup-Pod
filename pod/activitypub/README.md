@@ -140,7 +140,21 @@ ActivityPub uses two different environments. Set `DOCKER_ENV` environment var to
 
 ### Pod - Pod
 
-...
+### Federate pod1 with pod2
+
+- Sign in with `admin`
+- Go to the [Administration pannel > Followings](http://pod.localhost:8000/admin/activitypub/following/) > Add following
+- Type `http://pod2.localhost:8001` in *Object* and save
+- On the [Followings list](http://pod.localhost:8000/admin/activitypub/following/) select the new object, and select `Send the federation request` in the action list, refresh.
+- If the status is *Following request accepted* then select the object again, and choose `Reindex instance videos` in the action list.
+
+### Federate pod2 with pod1
+
+- Sign in with `admin`
+- Go to the [Administration pannel > Followings](http://pod2.localhost:8001/admin/activitypub/following/) > Add following
+- Type `http://pod.localhost:8000` in *Object* and save
+- On the [Followings list](http://pod2.localhost:8001/admin/activitypub/following/) select the new object, and select `Send the federation request` in the action list, refresh.
+- If the status is *Following request accepted* then select the object again, and choose `Reindex instance videos` in the action list.
 
 ### Pod - Peertube
 
