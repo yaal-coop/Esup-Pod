@@ -1,5 +1,6 @@
 #!/bin/sh
 INSTANCE="${POD_INSTANCE:-pod}"
+PORT="${POD_PORT:-8000}"
 echo "Launching commands into ${INSTANCE}-dev"
 mkdir -p pod/node_modules
 mkdir -p pod/db_migrations && touch pod/db_migrations/__init__.py
@@ -26,5 +27,5 @@ fi
 # Le serveur de développement permet de tester vos futures modifications facilement.
 # N'hésitez pas à lancer le serveur de développement pour vérifier vos modifications au fur et à mesure.
 # À ce niveau, vous devriez avoir le site en français et en anglais et voir l'ensemble de la page d'accueil.
-python3 manage.py runserver 0.0.0.0:8000 --insecure
+python3 manage.py runserver "0.0.0.0:${PORT}" --insecure
 sleep infinity

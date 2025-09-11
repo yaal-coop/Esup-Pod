@@ -38,9 +38,10 @@ services:
     env_file:
       - ./.env.dev
     ports:
-      - 9000:8000
+      - 9000:9000
     environment:
       - POD_INSTANCE=pod-b
+      - POD_PORT=9000
     volumes: *pod-volumes
 
   elasticsearch:
