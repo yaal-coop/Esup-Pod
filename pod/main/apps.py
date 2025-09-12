@@ -7,6 +7,7 @@ from django.db.models.signals import post_migrate
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.management import call_command
 
 import json
 
@@ -15,17 +16,16 @@ INSTANCE = os.getenv("POD_INSTANCE", "pod")
 PORT = os.getenv("POD_PORT", 8000)
 
 
-def init_site(sender, **kwargs):
+def load_data(sender, **kwargs):
     from django.contrib.sites.models import Site
 
+    call_command("loaddata", "initial_data.json")
+
     domain = f"{INSTANCE}.localhost:{PORT}"
-    Site.objects.update_or_create(
-        id=settings.SITE_ID,
-        defaults={
-            "domain": domain,
-            "name": domain,
-        }
-    )
+    site, _ = Site.objects.update_or_create(id=settings.SITE_ID)
+    site.domain = domain
+    site.name = domain
+    site.save()
 
 
 def create_missing_pages(sender, **kwargs) -> None:
@@ -178,4 +178,4 @@ class MainConfig(AppConfig):
         post_migrate.connect(create_missing_conf, sender=self)
         post_migrate.connect(create_missing_pages, sender=self)
         post_migrate.connect(create_first_block, sender=self)
-        post_migrate.connect(init_site, sender=self)
+        post_migrate.connect(load_data, sender=self)
